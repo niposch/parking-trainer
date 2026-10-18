@@ -21,3 +21,5 @@ The first visit may briefly display “Preparing browser support”. A compatibl
 Licence notices are copied into the Pages artifact. Generated exports, caches and compiler packages remain ignored by Git. No backend or homelab ingress route is involved.
 
 Sources: [GitHub project-domain inheritance](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages), [Godot isolation support](https://docs.godotengine.org/en/stable/classes/class_editorexportplatformweb.html#class-editorexportplatformweb-property-progressive-web-app-ensure-cross-origin-isolation-headers).
+
+Initial publication succeeded in [Pages run 39158559732](https://github.com/niposch/parking-trainer/actions/runs/39158559732). Pages initially chose `master`; its source was corrected to `main`, HTTPS enforcement enabled, and the `github-pages` environment restricted to `main` only. A rerun of the deployment job succeeded. The actual public game passed all 50 checks for that revision, including first-load isolation; later validation counts are recorded in `prototype-validation.md`.

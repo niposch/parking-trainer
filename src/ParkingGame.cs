@@ -19,7 +19,7 @@ public partial class ParkingGame : Node3D
     internal string Notice="";
     double noticeTime,beepTime,successTime;
     AudioStreamPlayer beep=null!;
-    int demoStep; double demoCarry,demoShiftWait;
+    int demoStep; double demoSegmentDistance,demoShiftWait;
     bool autoCapture,smokeMode,captureTaken; string capturePath="",captureView=""; int frames; ulong captureStarted;
     int selectedController=-1;
     ModernController modernController=null!;
@@ -81,7 +81,7 @@ public partial class ParkingGame : Node3D
         lot=new Node3D { Name="PracticeLot" };AddChild(lot);WorldFactory.BuildLot(lot,Scene);
         Car=new DrivingModel {Pose=Scene.Spawn,Gear=Gear.P,ParkingBrake=true};
         Gas=0;Brake=0;
-        Elapsed=0;successTime=0;Demo=false;Inspection=false;inspectionAcknowledged=false;demoStep=1;demoCarry=0;demoShiftWait=0;LookYaw=0;LookPitch=0;
+        Elapsed=0;successTime=0;Demo=false;Inspection=false;inspectionAcknowledged=false;demoStep=1;demoSegmentDistance=0;demoShiftWait=0;LookYaw=0;LookPitch=0;
         Notice=""; Paused=true;UpdateMouseCapture();
         eye.Position=PlayerCabin.EyeTarget(0,EyeHeight);
         if(autoCapture)
@@ -178,8 +178,7 @@ public partial class ParkingGame : Node3D
         if(!Paused && !autoCapture)
         {
             if(Inspection) Orbit(Dead(Axis(JoyAxis.RightX))*dt*1.9f,Dead(Axis(JoyAxis.RightY))*dt*1.35f);
-            else if(Demo) RunDemo(delta);
-            else
+            else if(!Demo)
             {
                 ReadPedals();
                 double steerInput=-Dead(Axis(JoyAxis.LeftX))+(TouchEnabled?touchControls.Steering:0)+(!NativeDriving&&Input.IsPhysicalKeyPressed(Key.A)?1:0)-(!NativeDriving&&Input.IsPhysicalKeyPressed(Key.D)?1:0);
@@ -201,10 +200,10 @@ public partial class ParkingGame : Node3D
                 LookPitch=Mathf.Clamp(LookPitch-Dead(Axis(JoyAxis.RightY))*dt*1.35f,-.65f,.55f);
             }
         }
-        ApplyPose();
+        if(!Demo || Paused || autoCapture) {ApplyPose();UpdateViews(delta);}
         for(int i=0;i<3;i++) {FrontSectors[i]=Car.Sensor(Scene.Obstacles,true,i-1);RearSectors[i]=Car.Sensor(Scene.Obstacles,false,i-1);}
         FrontRange=FrontSectors.Min();RearRange=RearSectors.Min();
-        UpdateViews(); UpdateHud(); Sound(delta);
+        UpdateHud(); Sound(delta);
     }
     void ApplyPose()
     {
@@ -223,38 +222,15 @@ public partial class ParkingGame : Node3D
     internal void StartDemo()
     {
         Car=new DrivingModel{Pose=Scene.Spawn,Gear=Gear.D,ParkingBrake=false};
-        demoStep=1;demoCarry=0;demoShiftWait=0;Demo=true;Inspection=false;inspectionAcknowledged=false;Paused=false;Tutor=true;menu.Hide();
+        demoStep=1;demoSegmentDistance=0;demoShiftWait=0;Demo=true;Inspection=false;inspectionAcknowledged=false;Paused=false;Tutor=true;menu.Hide();
         UpdateMouseCapture();
-    }
-    void RunDemo(double dt)
-    {
-        if(demoStep>=Scene.Path.Count) {Demo=false;Car.Speed=0;Car.Gear=Gear.P;Car.ParkingBrake=true;BeginInspection();Message("Demonstration complete. Inspect the parking position.");return;}
-        var step=Scene.Path[demoStep];
-        var neededGear=step.Distance>=0?Gear.D:Gear.R;
-        if(Car.Gear!=neededGear)
-        {
-            Car.Speed=0;demoCarry=0;demoShiftWait+=dt;
-            if(demoShiftWait>=1) {Car.Select(neededGear,1);demoShiftWait=0;}
-            return;
-        }
-        Car.Steer=Mathf.MoveToward((float)Car.Steer,(float)step.Steering,(float)dt*.9f);
-        if(Math.Abs(Car.Steer-step.Steering)>.01) {Car.Speed=0;return;}
-        Car.Speed=Math.Sign(step.Distance)*.55;
-        demoCarry+=dt*.55;
-        while(demoStep<Scene.Path.Count && demoCarry>=Math.Abs(Scene.Path[demoStep].Distance))
-        {
-            step=Scene.Path[demoStep];
-            if(Math.Abs(Car.Steer-step.Steering)>.01 || (step.Distance>=0?Gear.D:Gear.R)!=Car.Gear) {demoCarry=0;break;}
-            var next=Car.Pose.Advance(step.Distance,step.Steering);
-            if(DrivingModel.Collides(next,Scene.Obstacles)) {Demo=false;Car.Speed=0;Message("Demonstration stopped for clearance.");return;}
-            Car.Pose=next;demoCarry-=Math.Abs(step.Distance);demoStep++;
-        }
     }
     public override async void _Process(double delta)
     {
         frames++;
         UpdateWebFocus();
         UpdateControllerCheck();
+        if(Demo && !Paused && !autoCapture) {RunDemo(delta);ApplyPose();UpdateViews(delta);}
         if(autoCapture && captureView=="input") menuScroll.ScrollVertical=10000;
         if(autoCapture && !captureTaken && frames>=100 && Time.GetTicksMsec()-captureStarted>2500)
         {

@@ -75,10 +75,10 @@ void fragment(){
         mapCamera.KeepAspect=Camera3D.KeepAspectEnum.Height;
         mapCamera.Size=(float)Math.Max(maxZ-minZ,(maxX-minX)*mapViewport.Size.Y/mapViewport.Size.X);
     }
-    void UpdateViews()
+    void UpdateViews(double delta=1.0/120)
     {
         var eyeTarget=PlayerCabin.EyeTarget(LookYaw,EyeHeight);
-        eye.Position=eye.Position.Lerp(eyeTarget,1-Mathf.Exp(-(float)GetPhysicsProcessDeltaTime()*10));
+        eye.Position=eye.Position.Lerp(eyeTarget,1-Mathf.Exp(-(float)delta*10));
         eye.Rotation=new(LookPitch,LookYaw,0);eye.Fov=Fov;
         UpdateInspectionCamera();
         if(autoCapture && captureView.StartsWith("asset"))

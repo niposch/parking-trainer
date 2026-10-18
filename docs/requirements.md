@@ -207,3 +207,5 @@ Sources accessed 18 October 2026. Manufacturer manuals describe example equipmen
 ## Compact hint and publication — 18 October 2026
 
 Collapsed tutoring must occupy only one hint icon, without a phase-title banner. Publish source to `niposch/parking-trainer` and the browser game through GitHub Pages at `https://niposch.de/parking-trainer/`; inherit the existing user-site domain without DNS changes. Make the game discoverable from the homepage’s centralized Live projects directory.
+
+Demonstration playback must advance continuously through path segments on rendered frames, synchronize the camera views and vehicle, and preserve speed, steering/gear pauses and path geometry across frame rates. Avoid whole-waypoint pose jumps or fixed-rate visible playback.

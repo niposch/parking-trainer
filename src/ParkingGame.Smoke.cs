@@ -166,6 +166,7 @@ public partial class ParkingGame
                 if(exercise!=Exercise.ForwardBay) Check(sawReverse,$"{exercise}/{difficulty}/{(mirrored?"right":"left")} demonstration shifts from approach into reverse parking");
             }
             await PhysicsFrames(4);
+            passed+=await CheckDemoSmoothness();
             passed+=await CheckTouchControls();
             GD.Print($"SMOKE COMPLETE: {passed} runtime input/UI/demonstration checks passed.");GetTree().Quit();
         }

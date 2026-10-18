@@ -71,6 +71,7 @@ public partial class ParkingGame
             Check(inspectionCamera.Current && !eye.Current,"Third-person inspection camera active");
             double distance=Car.Travel;var pose=Car.Pose;Orbit(.25f,.1f);await PhysicsFrames(4);
             Check(Car.Pose==pose && Car.Travel==distance,"Inspection freezes driving");
+            passed+=await CheckDemoSmoothness();
             passed+=await CheckTouchControls();
             NewScenario(false);Pause(false);Tutor=false;
             for(int view=0;view<2;view++)
