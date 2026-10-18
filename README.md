@@ -44,3 +44,5 @@ Runtime input/UI checks:
 See [validation and remaining limits](docs/prototype-validation.md), [requirements](docs/requirements.md), and [asset provenance](assets/THIRD_PARTY.md). The 2026 Steam Controller is detected by the compatibility driver and both physical analog triggers were checked with the user; a complete through-Steam play session remains to be checked. The generic vehicle, camera optics, and reference points are not calibrated to the lesson car.
 
 This is a standalone Git repository inside the current workspace. Run Git commands from this directory. No remote or publishing destination is configured.
+
+Browser support has now been [investigated](docs/web-feasibility.md): a C# port through the experimental Godot 4.7.2 web-export fork appears feasible, with regular browser-compatible gamepads. A browser build has not yet been exported or tested.
