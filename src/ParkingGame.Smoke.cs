@@ -184,6 +184,7 @@ public partial class ParkingGame
             passed+=await CheckDemoSmoothness();
             passed+=await CheckTouchControls();
             passed+=await CheckParkingAssist();
+            passed+=await CheckPhoneFixes();
             GD.Print($"SMOKE COMPLETE: {passed} runtime input/UI/demonstration checks passed.");GetTree().Quit();
         }
         catch(Exception error) {GD.PushError("SMOKE FAILED: "+error);GetTree().Quit(1);}

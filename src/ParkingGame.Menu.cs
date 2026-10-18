@@ -17,7 +17,7 @@ public partial class ParkingGame
     readonly Button[] exerciseCards=new Button[3],difficultyButtons=new Button[3];
     Button menuBack=null!,scenarioStart=null!,controlsFirst=null!;
     Label scenarioDetails=null!;
-    ScrollContainer menuScroll=null!;
+    TouchMenuScroll menuScroll=null!;
     ColorRect menuBackdrop=null!;
     GridContainer scenarioCards=null!;
     readonly List<BoxContainer> responsiveRows=new();
@@ -39,7 +39,7 @@ public partial class ParkingGame
         menuTitle.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         menuSummary=Text(root,"",16);menuSummary.AutowrapMode=TextServer.AutowrapMode.WordSmart;menuSummary.CustomMinimumSize=new(0,50);
         root.AddChild(new HSeparator());
-        menuScroll=new ScrollContainer {FollowFocus=true,SizeFlagsVertical=Control.SizeFlags.ExpandFill,HorizontalScrollMode=ScrollContainer.ScrollMode.Disabled};root.AddChild(menuScroll);
+        menuScroll=new TouchMenuScroll {FollowFocus=true,SizeFlagsVertical=Control.SizeFlags.ExpandFill,HorizontalScrollMode=ScrollContainer.ScrollMode.Disabled};root.AddChild(menuScroll);
         var host=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};menuScroll.AddChild(host);
         VBoxContainer Page(string name)
         {
@@ -95,13 +95,13 @@ public partial class ParkingGame
 
         var options=Page("options");
         Text(options,"DISPLAY",13,new("52675f"));
-        displaySelector=new OptionButton {CustomMinimumSize=new(0,44),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
+        displaySelector=new OptionButton {MouseFilter=Control.MouseFilterEnum.Pass,CustomMinimumSize=new(0,44),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
         foreach(string label in IsWeb?new[]{"In browser tab","Fullscreen"}:new[]{"Windowed","Borderless fullscreen","Fullscreen"}) displaySelector.AddItem(Tr(label));
         displaySelector.AddThemeFontSizeOverride("font_size",17);displaySelector.AddThemeColorOverride("font_color",ink);displaySelector.AddThemeColorOverride("font_hover_color",ink);displaySelector.AddThemeColorOverride("font_pressed_color",ink);displaySelector.AddThemeColorOverride("font_focus_color",ink);
         displaySelector.AddThemeStyleboxOverride("normal",Style(new("e0e3d8"),null,7));displaySelector.AddThemeStyleboxOverride("hover",Style(accent,null,7));displaySelector.AddThemeStyleboxOverride("pressed",Style(accent,null,7));
         displaySelector.Select(DisplayMode);displaySelector.ItemSelected+=index=>ApplyWindowMode((int)index);options.AddChild(displaySelector);
         Text(options,"ON-SCREEN CONTROLS",13,new("52675f"));
-        touchSelector=new OptionButton {CustomMinimumSize=new(0,44),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
+        touchSelector=new OptionButton {MouseFilter=Control.MouseFilterEnum.Pass,CustomMinimumSize=new(0,44),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
         foreach(string label in new[]{"Auto (touch devices)","On","Off"}) touchSelector.AddItem(Tr(label));
         touchSelector.Select(TouchMode);touchSelector.ItemSelected+=index=>SetTouchMode((int)index);options.AddChild(touchSelector);
         var views=Row(options,24);
@@ -160,6 +160,7 @@ public partial class ParkingGame
     }
     void ShowMenuPage(string page)
     {
+        menuScroll.CancelTouch();
         MenuPage=page;
         if(page=="map") FrameTeachingMap();
         foreach(var pair in menuPages) pair.Value.Visible=pair.Key==page;

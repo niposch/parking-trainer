@@ -26,7 +26,7 @@ public partial class ParkingGame
         inspectionCamera=new Camera3D {Near=.08f,Far=75,Fov=60,CullMask=43};vehicle.AddChild(inspectionCamera);
         rearViewport=View(720,420,out rearCamera,39);rearCamera.KeepAspect=Camera3D.KeepAspectEnum.Width;rearCamera.Fov=112;
         for(int i=0;i<3;i++) {mirrorViewports[i]=View(i==1?500:352,i==1?170:216,out mirrorCameras[i]);}
-        for(int i=0;i<4;i++) {surroundSources[i]=View(380,380,out surroundCameras[i]);surroundCameras[i].Fov=150;}
+        for(int i=0;i<4;i++) {surroundSources[i]=View(380,380,out surroundCameras[i],1);surroundCameras[i].Fov=i<2?135:140;}
         mapViewport=View(700,580,out mapCamera,35);mapCamera.Projection=Camera3D.ProjectionType.Orthogonal;mapCamera.Size=25;
         mapCamera.Position=new(1,28,0);mapCamera.RotationDegrees=new(-90,0,0);
         // Ground-plane reconstruction from four finite, vehicle-mounted cameras.
@@ -44,12 +44,12 @@ vec4 camera_sample(sampler2D img,mat4 proj,mat4 view,vec3 p){
     return vec4(texture(img,uv).rgb,1.0);
 }
 void fragment(){
-    vec3 p=vec3((UV.x-0.5)*10.2,0.015,mix(-6.4,3.8,UV.y));
+    vec3 p=vec3((UV.x-0.5)*8.0,0.015,mix(-5.325,2.675,UV.y));
     vec4 a=camera_sample(image0,proj0,view0,p),b=camera_sample(image1,proj1,view1,p);
     vec4 c=camera_sample(image2,proj2,view2,p),d=camera_sample(image3,proj3,view3,p);
     float front=max(0.0,-p.z-1.325),back=max(0.0,p.z+1.325);
     vec4 w=vec4(front,back,max(0.0,-p.x),max(0.0,p.x));
-    w=pow(w,vec4(4.0))*vec4(a.a,b.a,c.a,d.a);
+    w=pow(w,vec4(8.0))*vec4(a.a,b.a,c.a,d.a);
     float total=dot(w,vec4(1.0));
     vec3 color=total>0.00001?(a.rgb*w.x+b.rgb*w.y+c.rgb*w.z+d.rgb*w.w)/total:vec3(0.12,0.16,0.18);
     if(abs(p.x)<0.90 && p.z>-3.55 && p.z<0.90){
@@ -110,11 +110,12 @@ void fragment(){
             cam.KeepAspect=Camera3D.KeepAspectEnum.Height;
             cam.SetFrustum(height*near/distance*(i==1?1:1.7f),new Vector2(local.X,local.Y)*near/distance,near,65);
         }
-        Vector3[] pos={new(0,1.0f,-3.58f),new(0,.93f,.925f),new(-1.0f,1.05f,-1.32f),new(1.0f,1.05f,-1.32f)};
+        // Bumper and underside-of-mirror mounts, calibrated for the nearby apron.
+        Vector3[] pos={new(0,.85f,-3.58f),new(.04f,1.10f,.925f),new(-(float)CarSpec.MirrorX,.99f,(float)CarSpec.MirrorZ+.08f),new((float)CarSpec.MirrorX,.99f,(float)CarSpec.MirrorZ+.08f)};
         float[] yaw={0,Mathf.Pi,Mathf.Pi/2,-Mathf.Pi/2};
         for(int i=0;i<4;i++)
         {
-            var local=new Transform3D(Basis.FromEuler(new(-.77f,yaw[i],0)),pos[i]);
+            var local=new Transform3D(Basis.FromEuler(new(-.96f,yaw[i],0)),pos[i]);
             surroundCameras[i].GlobalTransform=vehicle.GlobalTransform*local;
             surroundMaterial.SetShaderParameter($"view{i}",local.AffineInverse());
             surroundMaterial.SetShaderParameter($"proj{i}",surroundCameras[i].GetCameraProjection());

@@ -25,3 +25,7 @@ environment/defaults/default_clear_color=Color(0.53, 0.64, 0.69, 1)
 
 [physics]
 common/physics_ticks_per_second=120
+
+[audio]
+
+driver/output_latency.web=80

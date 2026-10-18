@@ -217,3 +217,11 @@ Demonstration playback must advance continuously through path segments on render
 - Position all mirror glass clear of the pillars/header. Attach holders behind their housings with no gaps or geometry passing through the reflector. Clip reflection rendering at the mirror plane and preserve the glass aspect ratio. Keep the repaired door lining flush, without attachment slivers or mismatched patches.
 - Size browser touch controls and menus in CSS screen units, accounting for device pixel ratio. Give controls generous touch targets and check dense phone screens, portrait and landscape. Keep independent realistic pedals and gear selection.
 - Expose fullscreen directly on the touch toolbar, through an actual pressed-input callback. Let it exit fullscreen too; retain the Options display selector. Installed PWA mode should request fullscreen. Fill available browser space as its chrome changes size.
+
+
+## Phone follow-up — 18 October 2026
+
+- Menu contents must scroll with a finger, including gestures starting over buttons. Dragging must cancel the pending button action while taps, wheel and controller navigation continue to work.
+- In landscape touch mode, place P/R/N/D and parking brake above the left steering pad so the right hand can keep holding the service brake.
+- Prevent red-zone alarm chatter and mobile playback glitches while preserving the existing pitch and loudness.
+- Improve surround-view camera placement, lens coverage, stitching and useful near-car framing. Remove duplicated player-body artifacts without changing the independent reversing camera.

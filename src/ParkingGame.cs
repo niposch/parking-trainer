@@ -26,7 +26,7 @@ public partial class ParkingGame : Node3D
     public override void _Ready()
     {
         DisplayServer.WindowSetTitle("Parking Practice · Prototype 01");
-        smokeMode=OS.GetCmdlineUserArgs().Contains("--smoke");
+        smokeMode=OS.GetCmdlineUserArgs().Contains("--smoke") || OS.GetCmdlineUserArgs().Contains("--phone-check");
         webCheck=IsWeb && OS.GetCmdlineUserArgs().Contains("--web-check");
         smokeMode|=webCheck;
         controllerCheck=OS.GetCmdlineUserArgs().Contains("--controller-check");
@@ -59,6 +59,7 @@ public partial class ParkingGame : Node3D
         GD.Print("Controllers available: "+string.Join(", ",Input.GetConnectedJoypads().Select(id=>$"{id}:{Input.GetJoyName(id)}")));
         NewScenario(false); UpdateMenu();
         if(webCheck) RunWebCheck();
+        else if(OS.GetCmdlineUserArgs().Contains("--phone-check")) RunPhoneCheck();
         else if(OS.GetCmdlineUserArgs().Contains("--smoke")) RunSmoke();
     }
     public override void _ExitTree() { Input.JoyConnectionChanged-=ControllerChanged;modernController?.Dispose(); }
@@ -88,7 +89,8 @@ public partial class ParkingGame : Node3D
         {
             Paused=captureView is "menu" or "input" or "scenarios" or "options" or "controls"; Car.Gear=Gear.R;
             if(captureView=="reverse") CameraMode=0;
-            if(captureView=="surround") { CameraMode=1; LookYaw=-.62f;LookPitch=-.40f; }
+            if(captureView.StartsWith("surround")) { CameraMode=1; LookYaw=-.62f;LookPitch=-.40f; }
+            if(captureView=="surround-close") Car.Pose=Scene.Goal.Advance(.45,0);
             if(captureView=="console") { CameraMode=0;LookYaw=-.62f;LookPitch=-.40f; }
             if(captureView=="sensors") {CameraMode=0;LookYaw=-.62f;LookPitch=-.40f;Car.Pose=Scene.Goal.Advance(1.35,0);}
             if(captureView=="inspection") {Car.Pose=Scene.Goal;Car.Gear=Gear.P;BeginInspection();}
@@ -238,6 +240,7 @@ public partial class ParkingGame : Node3D
             GD.Print($"Layout: window {GetWindow().Size}, viewport {GetViewport().GetVisibleRect().Size}, menu {menu.Size}, minimum {menu.GetCombinedMinimumSize()}");
             await ToSignal(RenderingServer.Singleton,RenderingServer.SignalName.FramePostDraw);
             var screenshot=GetViewport().GetTexture().GetImage();
+            if(captureView=="surround-close") rearRect.GetViewport().GetTexture().GetImage().SavePng(capturePath.Replace(".png","-console.png"));
             var error=screenshot.SavePng(capturePath);GD.Print($"Capture {capturePath}: {error}; {Engine.GetFramesPerSecond()} FPS");GetTree().Quit();
         }
     }

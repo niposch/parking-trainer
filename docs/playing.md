@@ -79,3 +79,5 @@ The hint starts as a single `?` icon. Tap/click the icon, tap the touch toolbarâ
 Use **Full screen** on the touch toolbar to hide browser chrome where supported; tap **Exit full** to return. The display option is also available in Options. Browser controls use screen-density-aware sizing, with larger pedals and steering regions. Installing/adding the PWA to the home screen provides another way to launch without the address bar; browser support varies.
 
 The console now shows lateral warning bars as well as bumper sectors. Outer zones cover nearby body sides, corners and mirrors continuously; their colour and beeper reflect the same distances. This is generic geometric parking assistance, not a calibrated copy of the lesson car's sensor hardware.
+
+Menus support finger swipes over their contents, including buttons; release without dragging to select an entry. In landscape touch mode, the gear row sits above the left steering pad so your right hand can keep pressing the brake during a shift. The surround display is now a tighter view of the area immediately around the car.

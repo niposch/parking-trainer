@@ -5,9 +5,12 @@ public partial class ParkingGame
 {
     internal float BeeperVolume=1;
     readonly AudioStreamWav[] sensorPulses=new AudioStreamWav[2],sensorContinuous=new AudioStreamWav[2];
-    bool beepFront;
+    bool beepFront,continuousAlarm;
     void SetupSensorAudio()
     {
+        // Web defaults to experimental browser Sample playback. Use the threaded
+        // mixer for stable loop timing and consistent stream state on phones.
+        beep.PlaybackType=AudioServer.PlaybackType.Stream;
         for(int channel=0;channel<2;channel++)
         {
             int frequency=channel==0?650:500;
@@ -38,15 +41,16 @@ public partial class ParkingGame
     void Sound(double dt)
     {
         beepTime-=dt;double range=Math.Min(FrontRange,RearRange);
-        bool continuous=range<.30;
+        if(range<.30) continuousAlarm=true;
+        else if(range>=.34) continuousAlarm=false;
         beep.VolumeDb=BeeperVolume<=0?-80:Mathf.LinearToDb(BeeperVolume);
         if(Muted||Paused||range>=1.6||Car.Gear==Gear.P||BeeperVolume<=0)
-        {beep.Stop();beepTime=0;return;}
+        {beep.Stop();beepTime=0;continuousAlarm=false;return;}
         // A small dead band avoids pitch chatter between nearly equal ranges.
         if(FrontRange+.08<RearRange) beepFront=true;
         else if(RearRange+.08<FrontRange) beepFront=false;
         int channel=beepFront?0:1;
-        if(continuous)
+        if(continuousAlarm)
         {
             if(beep.Stream!=sensorContinuous[channel] || !beep.Playing)
             {beep.Stream=sensorContinuous[channel];beep.Play();}

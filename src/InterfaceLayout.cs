@@ -33,7 +33,7 @@ internal static class InterfaceLayout
             regions["steer"]=new(m,size.Y-m-height,steerWidth,height);
             float gearGap=size.X/unit<384?4*unit:g,parkingWidth=size.X/unit<384?72*unit:88*unit;
             float gearSize=Mathf.Min(b,(size.X-2*m-parkingWidth-gearGap*4)/4);
-            float rowWidth=4*gearSize+parkingWidth+gearGap*4,x=size.X/unit>=650 && size.X>size.Y?size.X-m-rowWidth:(size.X-rowWidth)/2,y=size.Y-m-height-g-b;
+            float rowWidth=4*gearSize+parkingWidth+gearGap*4,x=size.X>size.Y?m:(size.X-rowWidth)/2,y=size.Y-m-height-g-b;
             foreach(string gear in new[]{"P","R","N","D"}) {regions[gear]=new(x,y,gearSize,b);x+=gearSize+gearGap;}
             regions["parking"]=new(x,y,parkingWidth,b);
         }

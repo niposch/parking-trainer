@@ -74,6 +74,7 @@ public partial class ParkingGame
             passed+=await CheckDemoSmoothness();
             passed+=await CheckTouchControls();
             passed+=await CheckParkingAssist();
+            passed+=await CheckPhoneFixes();
             NewScenario(false);Pause(false);Tutor=false;
             for(int view=0;view<2;view++)
             {

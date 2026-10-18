@@ -42,7 +42,7 @@ public partial class ParkingGame
     }
     Button Button(Node parent,string text,Action pressed)
     {
-        var button=new Button {Text=Tr(text),ClipText=true,TextOverrunBehavior=TextServer.OverrunBehavior.TrimEllipsis,CustomMinimumSize=new(0,44),MouseDefaultCursorShape=Control.CursorShape.PointingHand};
+        var button=new Button {MouseFilter=Control.MouseFilterEnum.Pass,Text=Tr(text),ClipText=true,TextOverrunBehavior=TextServer.OverrunBehavior.TrimEllipsis,CustomMinimumSize=new(0,44),MouseDefaultCursorShape=Control.CursorShape.PointingHand};
         button.AddThemeFontSizeOverride("font_size",17);button.AddThemeColorOverride("font_color",ink);
         button.AddThemeColorOverride("font_hover_color",ink);button.AddThemeColorOverride("font_pressed_color",ink);button.AddThemeColorOverride("font_focus_color",ink);
         button.AddThemeStyleboxOverride("normal",Style(new("e0e3d8"),null,7));
@@ -82,7 +82,7 @@ public partial class ParkingGame
         var v=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};parent.AddChild(v);
         var header=new HBoxContainer();v.AddChild(header);Text(header,name,13).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
         var readout=Text(header,value.ToString(step<1?"0.00":"0"),13);
-        var slider=new HSlider {MinValue=min,MaxValue=max,Step=step,Value=value,CustomMinimumSize=new(230,20)};v.AddChild(slider);
+        var slider=new HSlider {MouseFilter=Control.MouseFilterEnum.Pass,MinValue=min,MaxValue=max,Step=step,Value=value,CustomMinimumSize=new(230,20)};v.AddChild(slider);
         slider.ValueChanged+=x=>{readout.Text=x.ToString(step<1?"0.00":"0");changed(x);SaveSettings();};
     }
     void LayoutHud()

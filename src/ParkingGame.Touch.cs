@@ -65,6 +65,7 @@ public partial class ParkingGame
                 var regions=InterfaceLayout.TouchRegions(css*density,density,false);
                 Check(regions.Values.All(r=>r.Size.X/density>=48 && r.Size.Y/density>=48),$"Touch targets stay at least 48 CSS pixels at {css}, density {density}");
                 Check(regions.Values.All(r=>r.Position.X>=0 && r.Position.Y>=0 && r.End.X<=css.X*density && r.End.Y<=css.Y*density),"Mobile controls remain within the visible window");
+                if(css.X>css.Y) Check(regions["P"].Position.X==regions["steer"].Position.X && regions["D"].End.Y<regions["steer"].Position.Y,"Landscape gears sit above the left steering pad while the right hand holds the brake");
                 var list=regions.Values.ToArray();
                 Check(!list.Where((a,i)=>list.Skip(i+1).Any(b=>a.Intersects(b))).Any(),"Driving controls do not overlap in portrait or landscape");
             }
