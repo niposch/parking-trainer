@@ -6,6 +6,9 @@ public partial class ParkingGame : Node3D
     internal DrivingModel Car=new();
     internal Scenario Scene=null!;
     Node3D lot=null!,vehicle=null!;
+    (MeshInstance3D Mesh,Vector3 Rotation,Vector3 Centre,Vector3 Offset)[] steeringMeshes=[];
+    Node3D? driverWheel;
+    double displayedSteer=double.NaN;
     internal Camera3D eye=null!;
     internal bool Paused=true,Tutor=true,DynamicGuides=true,RateSteering=true,Muted=false,Demo=false;
     internal int CameraMode=0,Seed=18;
@@ -24,9 +27,11 @@ public partial class ParkingGame : Node3D
     {
         DisplayServer.WindowSetTitle("Parking Practice · Prototype 01");
         smokeMode=OS.GetCmdlineUserArgs().Contains("--smoke");
+        webCheck=IsWeb && OS.GetCmdlineUserArgs().Contains("--web-check");
+        smokeMode|=webCheck;
         controllerCheck=OS.GetCmdlineUserArgs().Contains("--controller-check");
         TranslationServer.SetLocale("en");
-        System.Globalization.CultureInfo.CurrentCulture=System.Globalization.CultureInfo.GetCultureInfo("en");
+        System.Globalization.CultureInfo.CurrentCulture=System.Globalization.CultureInfo.InvariantCulture;
         foreach(string arg in OS.GetCmdlineUserArgs())
         {
             if(arg.StartsWith("--capture=")) {capturePath=arg[10..];autoCapture=true;}
@@ -43,14 +48,18 @@ public partial class ParkingGame : Node3D
         vehicle=new Node3D { Name="PlayerVehicle" }; AddChild(vehicle);
         WorldFactory.Car(vehicle,"sedan",CarSpec.Width,CarSpec.Length,1.50,true);
         SetupMenuActions();SetupPedalActions();LoadSettings();SetupViews(); SetupHud();
-        if(!autoCapture&&!smokeMode) ApplyWindowMode(DisplayMode,false);
+        steeringMeshes=WorldFactory.Meshes(vehicle).Where(m=>m.HasMeta("steering_wheel") && m.GetMeta("steering_wheel").AsBool())
+            .Select(m=>(m,m.GetMeta("base_rotation").AsVector3(),m.GetMeta("wheel_centre").AsVector3(),m.GetAabb().GetCenter())).ToArray();
+        driverWheel=vehicle.FindChild("DriverWheel",true,false) as Node3D;
+        if(!autoCapture&&!smokeMode&&!IsWeb) ApplyWindowMode(DisplayMode,false);
         beep=new AudioStreamPlayer(); AddChild(beep);SetupSensorAudio();
         Input.JoyConnectionChanged+=ControllerChanged;
         foreach(int device in Input.GetConnectedJoypads()) {selectedController=device;break;}
         modernController=new ModernController();
         GD.Print("Controllers available: "+string.Join(", ",Input.GetConnectedJoypads().Select(id=>$"{id}:{Input.GetJoyName(id)}")));
         NewScenario(false); UpdateMenu();
-        if(OS.GetCmdlineUserArgs().Contains("--smoke")) RunSmoke();
+        if(webCheck) RunWebCheck();
+        else if(OS.GetCmdlineUserArgs().Contains("--smoke")) RunSmoke();
     }
     public override void _ExitTree() { Input.JoyConnectionChanged-=ControllerChanged;modernController?.Dispose(); }
     void ControllerChanged(long device,bool connected)
@@ -197,16 +206,16 @@ public partial class ParkingGame : Node3D
     void ApplyPose()
     {
         vehicle.Position=new((float)Car.Pose.X,0,(float)Car.Pose.Z);vehicle.Rotation=new(0,(float)Car.Pose.Yaw,0);
-        foreach(var m in WorldFactory.Meshes(vehicle))
+        if(displayedSteer==Car.Steer) return;
+        displayedSteer=Car.Steer;
+        // These nodes and offsets are fixed. Avoid walking the entire mesh tree
+        // through the WASM/.NET boundary on every 120 Hz physics tick.
+        foreach(var wheel in steeringMeshes)
         {
-            if(m.HasMeta("steering_wheel") && m.GetMeta("steering_wheel").AsBool())
-            {
-                var rotation=m.GetMeta("base_rotation").AsVector3();rotation.Y+=(float)Car.Steer;m.Rotation=rotation;
-                m.Position=m.GetMeta("wheel_centre").AsVector3()-m.Basis*m.GetAabb().GetCenter();
-            }
+            var rotation=wheel.Rotation;rotation.Y+=(float)Car.Steer;wheel.Mesh.Rotation=rotation;
+            wheel.Mesh.Position=wheel.Centre-wheel.Mesh.Basis*wheel.Offset;
         }
-        var wheel=vehicle.FindChild("DriverWheel",true,false) as Node3D;
-        if(wheel!=null) wheel.Basis=new Basis(Vector3.Right,Mathf.Pi/2-.25f)*new Basis(Vector3.Up,(float)Car.Steer*12);
+        if(driverWheel!=null) driverWheel.Basis=new Basis(Vector3.Right,Mathf.Pi/2-.25f)*new Basis(Vector3.Up,(float)Car.Steer*12);
     }
     internal void StartDemo()
     {
@@ -241,6 +250,7 @@ public partial class ParkingGame : Node3D
     public override async void _Process(double delta)
     {
         frames++;
+        UpdateWebFocus();
         UpdateControllerCheck();
         if(autoCapture && captureView=="input") menuScroll.ScrollVertical=10000;
         if(autoCapture && !captureTaken && frames>=100 && Time.GetTicksMsec()-captureStarted>2500)
@@ -254,7 +264,7 @@ public partial class ParkingGame : Node3D
     void SaveSettings()
     {
         if(autoCapture||smokeMode) return;
-        if(DisplayMode==0 && DisplayServer.GetName()!="headless" && DisplayServer.WindowGetMode()==DisplayServer.WindowMode.Windowed)
+        if(!IsWeb && DisplayMode==0 && DisplayServer.GetName()!="headless" && DisplayServer.WindowGetMode()==DisplayServer.WindowMode.Windowed)
         {windowedSize=DisplayServer.WindowGetSize();windowedPosition=DisplayServer.WindowGetPosition();}
         var cfg=new ConfigFile();cfg.SetValue("view","layout_version",2);cfg.SetValue("view","eye_height",EyeHeight);cfg.SetValue("view","fov",Fov);
         cfg.SetValue("input","rate_steering",RateSteering);cfg.SetValue("input","deadzone",Deadzone);
@@ -278,6 +288,7 @@ public partial class ParkingGame : Node3D
         Exercise=(Exercise)Math.Clamp((int)cfg.GetValue("practice","exercise",0),0,2);Difficulty=(Difficulty)Math.Clamp((int)cfg.GetValue("practice","difficulty",1),0,2);
         MirrorBay=(bool)cfg.GetValue("practice","mirrored_bay",false);
         DisplayMode=Math.Clamp((int)cfg.GetValue("display","mode",0),0,2);
+        if(IsWeb) DisplayMode=0; // Fullscreen always requires a fresh browser gesture.
         windowedSize=cfg.GetValue("display","window_size",new Vector2I(1280,800)).AsVector2I();
         windowedPosition=cfg.GetValue("display","window_position",new Vector2I(100,80)).AsVector2I();
         LoadPedalBindings(cfg);

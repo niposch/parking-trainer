@@ -1,6 +1,6 @@
 # Parking Practice — prototype 01
 
-A first-person parking practice game for Windows, written in C# for Godot 4.7.2 Mono. Uses **free CC0 assets only**, with no vehicle brands.
+A first-person parking practice game for Windows and experimental desktop browsers, written in C# for Godot 4.7.2 Mono. Uses **free CC0 assets only**, with no vehicle brands.
 
 ## Play
 
@@ -45,4 +45,4 @@ See [validation and remaining limits](docs/prototype-validation.md), [requiremen
 
 This is a standalone Git repository inside the current workspace. Run Git commands from this directory. No remote or publishing destination is configured.
 
-Browser support has now been [investigated](docs/web-feasibility.md): a C# port through the experimental Godot 4.7.2 web-export fork appears feasible, with regular browser-compatible gamepads. A browser build has not yet been exported or tested.
+For the browser prototype, double-click **Launch-Web.cmd**, or run `./serve-web.ps1 -Open`. The generated build is in `builds/web/`. Use an ordinary desktop browser for mouse capture and press a gamepad button to connect. See [browser controls, building and hosting](docs/web-playing.md) and the original [feasibility investigation](docs/web-feasibility.md). All 31 browser runtime checks passed; physical standard-gamepad testing remains pending.

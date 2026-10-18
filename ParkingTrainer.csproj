@@ -5,6 +5,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(ParkingWeb)' == 'true'">
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <DefineConstants>$(DefineConstants);PARKING_WEB</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(ParkingWeb)' == 'true'">
+    <TrimmerRootAssembly Include="System.Private.CoreLib" />
+    <TrimmerRootAssembly Include="System.Runtime" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
     <Compile Remove="exports/**/*.cs" />

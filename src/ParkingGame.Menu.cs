@@ -47,7 +47,8 @@ public partial class ParkingGame
         Button(retry,"Retry this layout",()=>NewScenario(false)).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
         Button(retry,"New variation",()=>NewScenario(true)).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
         Button(home,"Watch approach + parking demonstration",StartDemo);
-        Button(home,"Exit game",()=>{SaveSettings();GetTree().Quit();});
+        if(IsWeb) Text(home,"Click Continue driving to capture the mouse and enable audio. Esc pauses and releases the mouse.",14);
+        else Button(home,"Exit game",()=>{SaveSettings();GetTree().Quit();});
 
         var scenarios=Page("scenarios");
         Text(scenarios,"PARKING TYPE",13,new("52675f"));
@@ -87,7 +88,7 @@ public partial class ParkingGame
         var options=Page("options");
         Text(options,"DISPLAY",13,new("52675f"));
         displaySelector=new OptionButton {CustomMinimumSize=new(0,44),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
-        foreach(string label in new[]{"Windowed","Borderless fullscreen","Fullscreen"}) displaySelector.AddItem(Tr(label));
+        foreach(string label in IsWeb?new[]{"In browser tab","Fullscreen"}:new[]{"Windowed","Borderless fullscreen","Fullscreen"}) displaySelector.AddItem(Tr(label));
         displaySelector.AddThemeFontSizeOverride("font_size",17);displaySelector.AddThemeColorOverride("font_color",ink);displaySelector.AddThemeColorOverride("font_hover_color",ink);displaySelector.AddThemeColorOverride("font_pressed_color",ink);displaySelector.AddThemeColorOverride("font_focus_color",ink);
         displaySelector.AddThemeStyleboxOverride("normal",Style(new("e0e3d8"),null,7));displaySelector.AddThemeStyleboxOverride("hover",Style(accent,null,7));displaySelector.AddThemeStyleboxOverride("pressed",Style(accent,null,7));
         displaySelector.Select(DisplayMode);displaySelector.ItemSelected+=index=>ApplyWindowMode((int)index);options.AddChild(displaySelector);
@@ -160,6 +161,14 @@ public partial class ParkingGame
     }
     internal void ApplyWindowMode(int value,bool save=true)
     {
+        if(IsWeb)
+        {
+            DisplayMode=Math.Clamp(value,0,1);
+            DisplayServer.WindowSetMode(DisplayMode==1?DisplayServer.WindowMode.Fullscreen:DisplayServer.WindowMode.Windowed);
+            if(IsInstanceValid(displaySelector)) displaySelector.Select(DisplayMode);
+            if(save) SaveSettings();
+            return;
+        }
         value=Math.Clamp(value,0,2);
         if(DisplayServer.GetName()!="headless")
         {

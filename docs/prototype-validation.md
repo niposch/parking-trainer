@@ -1,5 +1,7 @@
 # Prototype 01 validation — 18 October 2026
 
+Browser update: the experimental C# release export passed 31 browser runtime checks. Windows regression checks passed with 102 headless checks; the unchanged simulation suite passed 1,169,077 assertions. See [browser validation, performance measurements and remaining manual checks](web-playing.md). Wheel mesh references/offsets are cached so the browser no longer traverses the complete car mesh hierarchy at 120 Hz.
+
 ## Verified
 
 - C# build on the installed .NET SDK 10.0.204, targeting .NET 8 with Godot.NET.Sdk 4.7.2: zero warnings and errors.

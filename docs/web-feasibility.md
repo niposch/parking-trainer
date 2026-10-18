@@ -1,6 +1,6 @@
 # Browser feasibility — 18 October 2026
 
-**Conclusion: a C# browser version is feasible in principle, using an experimental Godot fork.** No gameplay rewrite appears necessary from the code audit. This is a source/toolchain investigation, not a successful browser export: startup, input and performance still need a real browser test.
+**Status update: the C# browser prototype has now been exported and tested.** See [browser instructions and validation](web-playing.md). The investigation below records the initial toolchain audit; its proposed adaptations have subsequently been implemented. Physical controller and external-browser mouse/fullscreen validation remain pending.
 
 The owner accepts regular browser-compatible controllers for this version. Steam Controller-specific support and native Steam Input integration are not web requirements. Preserve independent analog RT gas / LT brake and separate gear selection.
 
@@ -47,4 +47,4 @@ Do not assume the fork supports the official engine's single-thread export path 
 
 First prove a small C# export boots and receives independent analog triggers. Then export the actual game and verify driving, all camera views, sensors/audio, tutor, inspection, pointer-lock recovery and saved options. Measure startup size/time and frame rate with the displays active; target 60 FPS at 1080p on a recorded desktop configuration. Mobile browsers are outside this initial target.
 
-**Decision:** proceed with this fork for an experimental desktop-browser build if requested. Standard controller support removes the need to port our special Windows controller driver. Actual browser execution remains the next validation gate.
+**Decision, subsequently implemented:** use this fork for the experimental desktop-browser build. Standard controller support removes the need to port our special Windows controller driver. The successful browser execution and remaining manual checks are recorded in [browser instructions](web-playing.md).

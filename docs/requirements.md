@@ -7,7 +7,7 @@
 ## 1. Agreed direction
 
 - Focus exclusively on low-speed parking, positioning, observation, and corrections. No traffic simulation, open world, racing, or conventional authored levels.
-- C# on Windows using the installed Godot 4.7.2 Mono. Steam Input for the Windows controller. Browser feasibility was subsequently requested; regular browser-compatible controllers are sufficient for that target. See [web feasibility](web-feasibility.md).
+- C# on Windows using the installed Godot 4.7.2 Mono. Steam Input for the Windows controller. An experimental C# desktop-browser prototype was subsequently requested and implemented; regular browser-compatible controllers are sufficient there. See [browser instructions](web-playing.md).
 - Right trigger accelerates; left trigger brakes in both directions. Reverse is selected separately.
 - English initially; prepare all text for later translation, including German.
 - Optional visual tutor explaining the manoeuvre and showing what to look at and align.
@@ -146,7 +146,7 @@ Use C# for the simulation, generator, and tutor; keep their logic separate from 
 - Actual controller and preferred stick-steering mode: establish during the first input trial.
 - Further free-pack refinement may follow user feedback; paid assets are excluded.
 - Prototype cues can teach spatial principles immediately; do not describe an uncalibrated generic car as an exact replica of the lesson car.
-- Browser feasibility has been investigated using the user-supplied [C# web-export fork](https://github.com/sethyanow/godot-dotnet-web-export) and its upstream Windows release; implementation and browser validation remain pending. Regular gamepads are sufficient for web, with independent analog pedals; Steam Controller-specific support is not required there. Native Steam Input API integration remains deferred. See [web feasibility](web-feasibility.md).
+- The experimental browser prototype uses the user-supplied [C# web-export fork](https://github.com/sethyanow/godot-dotnet-web-export)'s upstream Windows release. Regular gamepads are sufficient, with independent analog pedals; Steam Controller-specific support is not required there. Native Steam Input API integration remains deferred. See [browser validation and manual checks](web-playing.md).
 
 ## Visibility and sensor feedback - 18 October 2026
 

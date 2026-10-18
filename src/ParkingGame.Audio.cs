@@ -11,8 +11,14 @@ public partial class ParkingGame
         for(int channel=0;channel<2;channel++)
         {
             int frequency=channel==0?650:500;
-            sensorPulses[channel]=SensorTone(frequency,.075,false);
-            sensorContinuous[channel]=SensorTone(frequency,.20,true);
+            string side=channel==0?"front":"rear";
+            sensorPulses[channel]=IsWeb?GD.Load<AudioStreamWav>($"res://assets/audio/sensor-{side}-pulse.wav"):SensorTone(frequency,.075,false);
+            sensorContinuous[channel]=IsWeb?GD.Load<AudioStreamWav>($"res://assets/audio/sensor-{side}-loop.wav"):SensorTone(frequency,.20,true);
+            if(IsWeb)
+            {
+                var tone=sensorContinuous[channel];tone.LoopMode=AudioStreamWav.LoopModeEnum.Forward;
+                tone.LoopBegin=0;tone.LoopEnd=(int)(tone.MixRate*.20);
+            }
         }
     }
     static AudioStreamWav SensorTone(int frequency,double duration,bool loop)

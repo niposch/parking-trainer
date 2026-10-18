@@ -19,6 +19,13 @@ The local runtime bundle copies the user's installed Godot executable and suppor
 
 Audio beeps and environment/parking markings are generated locally by the prototype. Reference images supplied in chat have not been copied into the game or redistributed.
 
+## Experimental browser toolchain
+
+- [ComplexRobot Godot .NET web export 4.7.2-stable](https://github.com/ComplexRobot/godot-dotnet-web-export/releases/tag/4.7.2-stable), upstream of the owner-supplied sethyanow fork. Windows toolchain archive SHA-256: `7e54140fd3e84dfbf676bce56f6a792f1bc7734db36c67d860376b002f1a21d8`.
+- Builds use an isolated .NET SDK 9.0.319 and browser runtime 9.0.21. The runtime's licence and third-party notices are retained under `licenses/web-dotnet/`; Godot notices remain under `licenses/`. Build output includes these notices.
+- The browser uses the same CC0 vehicle resources. Its four PCM sensor WAV files are baked from our existing generated sine tones by `tools/generate-sensor-audio.py`; no additional audio assets were acquired.
+- The Windows SDL compatibility DLL is excluded from web compilation and distribution. Toolchain binaries and generated exports are not tracked in Git.
+
 ## SDL 3.4.16 controller compatibility library
 
 - Official release: https://github.com/libsdl-org/SDL/releases/tag/release-3.4.16

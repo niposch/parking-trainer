@@ -26,7 +26,7 @@ public partial class ParkingGame
         GD.Print(passed?"HARDWARE CHECK PASS: physical analog triggers received":"HARDWARE CHECK INCOMPLETE: both physical triggers need a slow full press");
         GetTree().Quit(passed?0:2);
     }
-    bool CaptureDrivingMouse=>!Paused&&!autoCapture;
+    bool CaptureDrivingMouse=>!Paused&&!autoCapture&&!webCheck;
     bool NativeDriving=>modernController?.Connected==true && selectedController==ModernController.Device;
     float PedalStrength(string action)
     {
@@ -36,7 +36,11 @@ public partial class ParkingGame
         return Input.GetActionStrength(action);
     }
 
-    void UpdateMouseCapture()=>Input.MouseMode=CaptureDrivingMouse?Input.MouseModeEnum.Captured:Input.MouseModeEnum.Visible;
+    void UpdateMouseCapture()
+    {
+        var mode=CaptureDrivingMouse?Input.MouseModeEnum.Captured:Input.MouseModeEnum.Visible;
+        if(Input.MouseMode!=mode) Input.MouseMode=mode;
+    }
     void SetupMenuActions()
     {
         // The engine's built-in accept action can contain keyboard events only.
@@ -125,13 +129,14 @@ public partial class ParkingGame
             LookYaw-=look.ScreenRelative.X*.0025f;
             LookPitch=Mathf.Clamp(LookPitch-look.ScreenRelative.Y*.0025f,-.65f,.55f);
         }
+        if(IsWeb && !Paused && ev is InputEventMouseButton {Pressed:true,ButtonIndex:MouseButton.Left}) UpdateMouseCapture();
     }
     void UpdateDeviceStatus()
     {
         if(!IsInstanceValid(deviceLabel)) return;
         var devices=Input.GetConnectedJoypads();
         deviceLabel.Text=modernController?.Connected==true?string.Format(Tr("Controller: {0} · SDL 3.4.16 compatibility driver"),modernController.Name):devices.Count>0?string.Format(Tr("Gamepads: {0}"),string.Join(", ",devices.Select(id=>$"{id}: {Input.GetJoyName(id)}"))):
-            Tr("No gamepad detected. Steam may be emulating keyboard/mouse. Use a Gamepad layout for analog L2/R2; mouse-button pedals are digital.");
+            Tr(IsWeb?"Press a button on your gamepad to connect. Use a browser-compatible controller for analog L2/R2. Keyboard W/S pedals are also available.":"No gamepad detected. Steam may be emulating keyboard/mouse. Use a Gamepad layout for analog L2/R2; mouse-button pedals are digital.");
         if(lastInput!="") deviceLabel.Text+="\n"+lastInput;
         if(IsInstanceValid(pedalStatus)) pedalStatus.Text=string.Format(Tr("Input test · L2 brake {0:0}% · R2 gas {1:0}%"),PedalStrength(BrakeAction)*100,PedalStrength(GasAction)*100);
     }

@@ -1,3 +1,4 @@
+#if !PARKING_WEB
 using Godot;
 using System.Runtime.InteropServices;
 namespace ParkingTrainer;
@@ -107,3 +108,4 @@ internal sealed class ModernController : IDisposable
     [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern void SDL_free(IntPtr memory);
     [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern void SDL_QuitSubSystem(uint flags);
 }
+#endif
