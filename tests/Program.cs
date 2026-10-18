@@ -25,11 +25,18 @@ foreach(double steer in new[]{-.6,-.15,0,.3,.6})
     Check(Math.Sqrt(Math.Pow(numerical.X-exact.X,2)+Math.Pow(numerical.Z-exact.Z,2))<.001,"Independent Euler integration agrees to 1 mm over 5 m");
 }
 foreach(Exercise e in Enum.GetValues<Exercise>())
+foreach(Difficulty difficulty in Enum.GetValues<Difficulty>())
 for(int seed=0;seed<100;seed++)
 {
-    var s=Scenario.Create(e,seed); var repeat=Scenario.Create(e,seed);
+    var s=Scenario.Create(e,seed,difficulty); var repeat=Scenario.Create(e,seed,difficulty);
     Check(s.Spawn==repeat.Spawn && s.Obstacles.SequenceEqual(repeat.Obstacles),"Deterministic scenario");
     Check(!DrivingModel.Collides(s.Spawn,s.Obstacles),"Clear spawn");
+    var range=Scenario.SpaceRange(e,difficulty);double space=e==Exercise.Parallel?s.Gap:s.BayWidth;
+    Check(space>=range.Min && space<=range.Max,"Difficulty retains its advertised space size");
+    Check(s.ApproachEnd>200 && s.Path[s.ApproachEnd].Pose==s.SetupPose,"Approach is separate from the parking setup");
+    Check(s.Path.Skip(1).Take(s.ApproachEnd).All(q=>q.Distance>0),"Approach requires driving forward before the parking maneuver");
+    var lateral=(s.Spawn.X-s.SetupPose.X)*Math.Cos(s.SetupPose.Yaw)-(s.Spawn.Z-s.SetupPose.Z)*Math.Sin(s.SetupPose.Yaw);
+    Check(Math.Abs(lateral)>.10,"Approach starts laterally offset from the parking reference setup");
     var p=s.Spawn;
     foreach(var q in s.Path.Skip(1))
     {
@@ -56,4 +63,4 @@ car.Move(1,new[]{obstacle});
 Check(car.Contacts==1 && !DrivingModel.Collides(car.Pose,new[]{obstacle}),"Swept collision stops without tunnelling");
 Check(new Footprint(0,0,2,4,.4).Overlaps(new(0,0,2,4,-.3)),"Rotated SAT overlap");
 Check(!new Footprint(0,0,2,4,.4).Overlaps(new(20,0,2,4,-.3)),"Separated SAT boxes");
-Console.WriteLine($"PASS: {checks:N0} checks, including 300 procedural feasibility traces.");
+Console.WriteLine($"PASS: {checks:N0} checks, including 900 procedural feasibility traces.");

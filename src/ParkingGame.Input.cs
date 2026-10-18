@@ -37,6 +37,19 @@ public partial class ParkingGame
     }
 
     void UpdateMouseCapture()=>Input.MouseMode=CaptureDrivingMouse?Input.MouseModeEnum.Captured:Input.MouseModeEnum.Visible;
+    void SetupMenuActions()
+    {
+        // The engine's built-in accept action can contain keyboard events only.
+        // Bind standard gamepad controls explicitly, including synthetic SDL IDs.
+        foreach(var binding in new[]{("ui_accept",JoyButton.A),("ui_cancel",JoyButton.B),("ui_up",JoyButton.DpadUp),("ui_down",JoyButton.DpadDown),("ui_left",JoyButton.DpadLeft),("ui_right",JoyButton.DpadRight)})
+        {
+            if(!InputMap.HasAction(binding.Item1)) InputMap.AddAction(binding.Item1);
+            var ev=new InputEventJoypadButton {Device=-1,ButtonIndex=binding.Item2};
+            if(!InputMap.ActionHasEvent(binding.Item1,ev)) InputMap.ActionAddEvent(binding.Item1,ev);
+        }
+        foreach(var binding in new[]{("ui_left",JoyAxis.LeftX,-1f),("ui_right",JoyAxis.LeftX,1f),("ui_up",JoyAxis.LeftY,-1f),("ui_down",JoyAxis.LeftY,1f)})
+            InputMap.ActionAddEvent(binding.Item1,new InputEventJoypadMotion {Device=-1,Axis=binding.Item2,AxisValue=binding.Item3});
+    }
     void SetupPedalActions()
     {
         ConfigurePedal(GasAction,JoyAxis.TriggerRight,Key.W,MouseButton.Left,gasBinding);

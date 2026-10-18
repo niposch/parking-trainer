@@ -156,6 +156,15 @@ Use C# for the simulation, generator, and tutor; keep their logic separate from 
 - Interior and exterior must use the same window/body geometry. Interior trim and glazing must not obstruct the wheel, digital instruments or low console screen.
 - For the requested prototype sensor profile, exclude low sidewalks/curbs from beepers and indicators while preserving their collision geometry.
 
+## Approach, difficulty and menus - 18 October 2026
+
+- Each scenario must begin before the parking space on a drive-up approach, with a varied lateral position and small heading difference. The player chooses the stopping point and alignment; do not spawn at the reference maneuver's setup pose. Preserve P plus parking brake at spawn.
+- Provide a scenario submenu with schematic parking-type cards and Spacious / Standard / Tight space choices. Show real dimension ranges. Parallel difficulty controls gap length; bay difficulty controls width. Keep the chosen range fixed during generation and validate approach plus maneuver feasibility.
+- Scenario edits are drafts until Start practice; backing out preserves the active run. Retry keeps the seed and difficulty; New variation changes the seed. Persist the active type/difficulty.
+- Pause home separates Continue, scenario selection, Options, retry/variation and demonstration. Options holds display/view/driving/assistance, with controls/calibration and teaching-map subpages. Support controller focus and accept/back throughout; Escape backs out one level before resuming.
+- Provide Windowed, Borderless fullscreen and Fullscreen modes; restore decorated window size/position when returning to Windowed and persist the choice.
+- Tutor and demonstrations include the approach and stopped gear changes, preserving realistic separate throttle/brake operation.
+
 ## Sources
 
 Sources accessed 18 October 2026. Manufacturer manuals describe example equipment, not confirmed specifications of the learner's car. Asset listing claims are not import or dimensional validation.

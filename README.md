@@ -8,21 +8,21 @@ Double-click **Launch.cmd**, or run `builds/ParkingPractice/ParkingPractice.exe`
 
 For Steam Input, add `builds/ParkingPractice/ParkingPractice.exe` as a non-Steam game. Set **Start In** to its containing folder and use an analog **Gamepad** layout. If needed, set launch options to `--path "C:\Users\Nickp\Development\homelab\parking-trainer\builds\ParkingPractice"`. Launch through Steam and press a controller button before choosing Drive.
 
-See [controls and playing notes](docs/playing.md).
+See [controls and playing notes](docs/playing.md). Use **Esc → Choose scenario** for parking type and space difficulty, or **Esc → Options** for display and control settings. Scenarios now start before the space, with a varied lateral offset and heading: drive up in D and choose your own setup position.
 
-Scenarios start in P with the parking brake on. Hold L2/S, select R/D, then release the parking brake with right-stick click/Space. Mouse look is captured while driving; Escape releases it. The pause menu includes a live pedal input test and rebinding. Steam keyboard/mouse layouts also support left-click gas/right-click brake as digital fallbacks; use a Gamepad layout for analog triggers.
+Scenarios start in P with the parking brake on. Hold L2/S, select D for the approach, then release the parking brake with right-stick click/Space. Mouse look is captured while driving; Escape releases it. The pause menu includes a live pedal input test and rebinding. Steam keyboard/mouse layouts also support left-click gas/right-click brake as digital fallbacks; use a Gamepad layout for analog triggers.
 
 ## Included
 
 - First-person cockpit, head look and shoulder view; no chase camera.
 - Automatic creep, independent gas/brake, P/R/N/D, parking brake, finite steering rate, collision stopping.
-- Procedural reverse parallel, reverse 90° bay and forward 90° bay exercises; repeatable variations.
+- Procedural reverse parallel, reverse 90° bay and forward 90° bay exercises; repeatable variations, three space difficulties, and a varied forward approach before every maneuver.
 - Physically mounted mirrors and center-console camera/surround display; minimal digital speed, gear and parking-brake instruments behind the steering wheel.
 - Fixed/steering rear guides, four-camera surround composite, front/rear parking beepers.
 - Optional tutor, landmark highlight, first-person demonstrations and a paused teaching map.
 - Six stepped sensor indicators on the console and automatic third-person inspection after securing the car.
 - Bundled SDL 3.4.16 compatibility driver for the 2026 Steam Controller; the installed Godot remains unchanged.
-- Field-of-view, eye-height and dead-zone settings; controller menu navigation and keyboard fallback.
+- Diagram-based scenario selection; separate Options and controller setup pages; fullscreen, borderless fullscreen and windowed modes; field-of-view, eye-height and dead-zone settings.
 
 ## Build and verify
 

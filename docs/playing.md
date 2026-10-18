@@ -4,7 +4,7 @@ Run `ParkingPractice.exe` from the runtime bundle, or `Launch.cmd` from the sour
 
 Choose the exercise and select **Drive / Resume**. Every scenario starts in **P with the parking brake applied**. Hold L2/S, select R or D, then explicitly release the parking brake with right-stick click/Space. Release the service brake gently to creep. Resuming does not change gear or release the parking brake. Park only after stopping: select P, then apply the parking brake.
 
-The mouse is captured while driving and moves the driver's head. Escape pauses and releases it for menus; losing application focus also pauses. Starting a new scenario releases the mouse until you choose Drive again.
+The mouse is captured while driving and moves the driver's head. Escape pauses and releases it for menus; losing application focus also pauses. Retry/new variation returns to pause home. Start practice in the scenario selector captures the mouse immediately while the car remains secured.
 
 | Action | Controller / Steam Input gamepad layout | Keyboard |
 |---|---|---|
@@ -35,7 +35,9 @@ Six visual sensor zones (front left/centre/right and rear left/centre/right) alw
 
 After moving, stop, select **P** and apply the **parking brake** to automatically enter third-person inspection. This also works for an imperfect parking position. Driving is frozen while you inspect. Mouse/right stick orbits, mouse wheel zooms, **B / Enter** returns to the cockpit with P and parking brake retained. Demonstrations also finish in inspection.
 
-Menus support controller focus navigation. Scroll down for view settings, beeper mute, teaching map, and keyboard help. The map only appears while paused; it is separate from the car's surround-camera display.
+Esc / Start opens the pause home page. **Choose scenario** opens three schematic parking cards and **Spacious / Standard / Tight** choices. Changes stay pending until **Start practice**; Back cancels them and keeps the current attempt. Retry preserves the layout seed and difficulty; New variation keeps the parking type/difficulty and generates another layout. Esc / B returns one menu level; from pause home it resumes driving.
+
+**Options** contains Windowed / Borderless fullscreen / Fullscreen, view settings, steering and assistance. **Controller setup & controls** holds the live pedal test, rebinding and keyboard help. **Teaching map** has its own paused page, separate from the car's surround-camera display. D-pad or left stick navigates; A / Enter selects. Display mode and practice preferences persist. Windowed mode restores its previous size and position.
 
 The yellow camera lines represent approximately body width plus 2 cm per side. Cross lines are at 0.4 m, 1 m and 2 m of reverse travel from the rear bumper reference; they are **not** a guarantee of mirror/front-corner clearance. Front and rear beepers have different pitches and become continuous near 0.30 m.
 
@@ -43,10 +45,20 @@ The prototype permits pull-forward corrections. A green target outline marks the
 
 Steam must launch the executable for its per-game controller layout to apply. For **analog pedals**, select a **Gamepad** layout and keep L2/LT and R2/RT analog output enabled as their respective triggers. A keyboard/mouse layout can make other controls work while the game reports no gamepad. That layout now also works with **left mouse button = gas, right mouse button = brake**, but these pedals are on/off rather than analog.
 
-Scroll down in the pause menu for the **Input test**: slowly press each trigger and check that its percentage varies smoothly. The menu shows detected gamepads and the last received button/axis/key. **Bind L2 brake / Bind R2 gas** allow an alternate axis, button, key or mouse button; press the desired input fully, or Escape to cancel. Bindings persist, and **Reset pedals** restores defaults. Analog trigger events are accepted from any gamepad, including Steam's virtual gamepad. No native Steamworks API or Steam store release is required.
+Open **Esc → Options → Controller setup & controls** for the **Input test**: slowly press each trigger and check that its percentage varies smoothly. The menu shows detected gamepads and the last received button/axis/key. **Bind L2 brake / Bind R2 gas** allow an alternate axis, button, key or mouse button; press the desired input fully, or Escape to cancel. Bindings persist, and **Reset pedals** restores defaults. Analog trigger events are accepted from any gamepad, including Steam's virtual gamepad. No native Steamworks API or Steam store release is required.
 
 The **2026 Steam Controller** has a compatibility driver bundled with this prototype: SDL 3.4.16, because the installed Godot's SDL 3.2.28 lacks this hardware's native support. Godot-detected gamepads take priority; the compatibility driver activates when Godot detects none. Its default pedals read the physical analog triggers directly so Steam-emulated mouse clicks cannot turn a partial squeeze into full gas/brake. Keyboard steering/pedals are fallbacks when this driver is inactive; mouse look remains available. The driver uses standard physical controls rather than Steam remaps when operating directly. Both physical triggers were verified reaching full range with intermediate levels on the user's connected controller.
 
 This uses a generic 4.45 m × 1.80 m car with a 2.65 m wheelbase. Exact seat position, mirrors, wide-angle lens distortion, and lesson-car reference cues remain uncalibrated. This first version is for feedback on controls and parking practice, not a claim of exact real-car sightline matching.
 
 Looking beyond about 100 degrees progressively moves the viewpoint inboard and rearward as the torso turns; looking fully back lets you see between the front seats. Ordinary side views keep the seated eye position. The generic liftback has distinct front seats, a rear bench, three rear head restraints and solid window pillars. Its proportions follow the supplied body-shape references, not an identified lesson-car model.
+
+Every scenario now starts on a forward approach, roughly 16–19 m of travel before the reference setup pose, with a varied lateral offset and small heading difference. Start in P with the parking brake on, hold the service brake, select **D**, release the parking brake and drive up. You choose where to stop, how far beside the parked vehicles to position yourself, and when to reverse. The tutor's opening phase covers this approach. Demonstrations show it too, with a stopped pause at gear changes; tighter parallel spaces include a final correction.
+
+| Space difficulty | Parallel gap length | 90-degree bay width |
+| --- | --- | --- |
+| Spacious | 8.00–8.30 m | 2.90–3.10 m |
+| Standard | 7.00–7.30 m | 2.55–2.70 m |
+| Tight | 6.45–6.65 m | 2.30–2.40 m |
+
+The selector shows these ranges; pause home shows the actual generated size. Difficulty changes physical space dimensions, independently of tutor/camera assistance. Layout generation validates a complete collision-free approach and parking witness without silently enlarging the selected space. Generator version 2 intentionally changes the layouts produced by earlier seeds.

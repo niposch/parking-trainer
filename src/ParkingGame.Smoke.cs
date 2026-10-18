@@ -45,6 +45,36 @@ public partial class ParkingGame
             sensorGraphic.SetRanges(new[]{2.0,.25,.8},new[]{.5,1.2,2.0});
             Check(Enumerable.Range(0,6).Select(sensorGraphic.Level).SequenceEqual(new[]{0,4,2,3,1,0}),"Each front/rear sensor has independent stepped visual proximity");
             Check(ParkingSensors.ProximityLevel(.3)==3 && ParkingSensors.ProximityLevel(.6)==2 && ParkingSensors.ProximityLevel(1)==1 && ParkingSensors.ProximityLevel(1.6)==0,"Sensor display thresholds match the documented steps");
+            Check(MenuPage=="home" && menuPages["home"].Visible && !menuPages["options"].Visible,"Pause opens a focused home page with options in a submenu");
+            Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.DpadDown,Pressed=true});await PhysicsFrames(3);
+            Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.DpadDown,Pressed=false});
+            Check(GetViewport().GuiGetFocusOwner()!=resumeButton,"Controller D-pad navigates pause menu focus");
+            Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.A,Pressed=true});await PhysicsFrames(3);
+            Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.A,Pressed=false});await PhysicsFrames(3);
+            Check(MenuPage=="scenarios" && Paused,"Controller accept opens scenario selection");
+            var currentScene=Scene;var currentPose=Car.Pose;
+            exerciseCards[2].EmitSignal(Godot.Button.SignalName.Pressed);difficultyButtons[2].EmitSignal(Godot.Button.SignalName.Pressed);
+            Check(Scene==currentScene && Car.Pose==currentPose,"Editing scenario choices preserves the current attempt until Start");
+            Tap(Key.Escape);await PhysicsFrames(3);
+            Check(Paused && MenuPage=="home" && Scene==currentScene,"Escape backs out of scenario selection without resuming or replacing the attempt");
+            ShowMenuPage("options");ShowMenuPage("controls");Tap(Key.Escape);await PhysicsFrames(3);
+            Check(Paused && MenuPage=="options","Controls page goes back to Options");
+            ShowMenuPage("map");await PhysicsFrames(3);
+            Check(Paused && mapRect.Visible,"Teaching map has a dedicated paused page");
+            Check(DrivingModel.Body(Car.Pose).Corners().All(p=>{var v=mapCamera.UnprojectPosition(new((float)p.X,0,(float)p.Z));return v.X>0&&v.X<mapViewport.Size.X&&v.Y>0&&v.Y<mapViewport.Size.Y;}),"Teaching map frames the complete car on the new approach");
+            Tap(Key.Escape);await PhysicsFrames(3);Check(MenuPage=="options" && !mapRect.Visible,"Map Back returns to Options and hides the map");
+            Tap(Key.Escape);await PhysicsFrames(3);Check(Paused && MenuPage=="home","Options goes back to pause home");
+            OpenScenarioSelection();exerciseCards[2].EmitSignal(Godot.Button.SignalName.Pressed);difficultyButtons[2].EmitSignal(Godot.Button.SignalName.Pressed);scenarioStart.EmitSignal(Godot.Button.SignalName.Pressed);await PhysicsFrames(3);
+            Check(!Paused && Exercise==Exercise.ForwardBay && Difficulty==Difficulty.Tight && Scene.BayWidth>=2.30 && Scene.BayWidth<=2.40,"Start applies the selected parking type and physical difficulty");
+            Check(Car.Gear==Gear.P && Car.ParkingBrake && Scene.ApproachEnd>200 && Scene.Path[1].Distance>0,"New selected scenario starts secured before a forward approach");
+            Pause(true);
+            if(DisplayServer.GetName()!="headless")
+            {
+                var previousSize=DisplayServer.WindowGetSize();
+                ApplyWindowMode(1);await PhysicsFrames(8);Check(DisplayServer.WindowGetMode()==DisplayServer.WindowMode.Fullscreen,"Borderless fullscreen uses the full-display window mode");
+                ApplyWindowMode(2);await PhysicsFrames(8);Check(DisplayServer.WindowGetMode()==DisplayServer.WindowMode.ExclusiveFullscreen,"Fullscreen uses exclusive fullscreen mode");
+                ApplyWindowMode(0);await PhysicsFrames(8);Check(DisplayServer.WindowGetMode()==DisplayServer.WindowMode.Windowed && !DisplayServer.WindowGetFlag(DisplayServer.WindowFlags.Borderless) && DisplayServer.WindowGetSize()==previousSize,"Windowed mode restores its size and title-bar decorations");
+            }
             resumeButton.EmitSignal(Godot.Button.SignalName.Pressed);
             await PhysicsFrames(3);Check(!Paused,"Menu resume button starts practice");
             var secured=Car.Pose;await PhysicsFrames(120);
@@ -113,10 +143,14 @@ public partial class ParkingGame
             NewScenario(true);await PhysicsFrames(3);
             Check(Car.Gear==Gear.P && Car.ParkingBrake && Car.Speed==0,"New variation resets gear and parking brake");
             foreach(Exercise exercise in Enum.GetValues<Exercise>())
+            foreach(Difficulty difficulty in Enum.GetValues<Difficulty>())
             {
-                Exercise=exercise;NewScenario(false);StartDemo();
-                int safety=0;while(Demo && safety++<3000) RunDemo(.1);
-                Check(!Demo && Scene.PositionError(Car.Pose)<.02,$"{exercise} demonstration reaches parking position");
+                Exercise=exercise;Difficulty=difficulty;NewScenario(false);StartDemo();
+                Check(Car.Gear==Gear.D && Car.Pose==Scene.Spawn,$"{exercise}/{difficulty} demonstration starts on the approach in D");
+                bool sawReverse=false;int safety=0;
+                while(Demo && safety++<4000) {RunDemo(.1);sawReverse|=Car.Gear==Gear.R;}
+                Check(!Demo && Scene.PositionError(Car.Pose)<.02 && Car.Gear==Gear.P && Car.ParkingBrake,$"{exercise}/{difficulty} demonstration finishes parked and secured");
+                if(exercise!=Exercise.ForwardBay) Check(sawReverse,$"{exercise}/{difficulty} demonstration shifts from approach into reverse parking");
             }
             await PhysicsFrames(4);
             GD.Print($"SMOKE COMPLETE: {passed} runtime input/UI/demonstration checks passed.");GetTree().Quit();

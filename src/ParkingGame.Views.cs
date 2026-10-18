@@ -66,6 +66,15 @@ void fragment(){
         landmark=new Label3D {Text="◉",FontSize=80,PixelSize=.0035f,Modulate=new("d4ff9e"),Billboard=BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest=false,OutlineSize=10,OutlineModulate=new("23332a"),Layers=1};AddChild(landmark);
     }
+    void FrameTeachingMap()
+    {
+        var points=Scene.Obstacles.Where(o=>!o.Curb).SelectMany(o=>o.Shape.Corners())
+            .Concat(DrivingModel.Body(Car.Pose).Corners()).Concat(DrivingModel.Body(Scene.Goal).Corners()).ToArray();
+        double minX=points.Min(p=>p.X)-2,maxX=points.Max(p=>p.X)+2,minZ=points.Min(p=>p.Z)-2,maxZ=points.Max(p=>p.Z)+2;
+        mapCamera.Position=new((float)((minX+maxX)/2),28,(float)((minZ+maxZ)/2));
+        mapCamera.KeepAspect=Camera3D.KeepAspectEnum.Height;
+        mapCamera.Size=(float)Math.Max(maxZ-minZ,(maxX-minX)*mapViewport.Size.Y/mapViewport.Size.X);
+    }
     void UpdateViews()
     {
         var eyeTarget=PlayerCabin.EyeTarget(LookYaw,EyeHeight);
@@ -108,7 +117,7 @@ void fragment(){
             surroundMaterial.SetShaderParameter($"proj{i}",surroundCameras[i].GetCameraProjection());
             surroundSources[i].RenderTargetUpdateMode=CameraMode==1&&!Paused?SubViewport.UpdateMode.Always:SubViewport.UpdateMode.Disabled;
         }
-        mapViewport.RenderTargetUpdateMode=mapRect.Visible?SubViewport.UpdateMode.Always:SubViewport.UpdateMode.Disabled;
+        mapViewport.RenderTargetUpdateMode=mapRect.IsVisibleInTree()?SubViewport.UpdateMode.Always:SubViewport.UpdateMode.Disabled;
         UpdateGuides();
         var reference=Scene.Obstacles.First(o=>!o.Curb);
         var corner=new Pose(reference.Shape.X,reference.Shape.Z,reference.Shape.Yaw).Point(-reference.Shape.Width/2+.09,reference.Shape.Length/2+.025);

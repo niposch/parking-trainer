@@ -56,46 +56,17 @@ public partial class ParkingGame
         metricsLabel.Hide();
         noticeLabel=Text(hud,"",18,cream);noticeLabel.Position=new(470,800);noticeLabel.Size=new(500,65);noticeLabel.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         noticeLabel.AddThemeColorOverride("font_shadow_color",ink);noticeLabel.AddThemeConstantOverride("shadow_offset_x",1);noticeLabel.AddThemeConstantOverride("shadow_offset_y",2);
-        menu=Panel(hud,new(410,138),new(620,665),cream);menu.MouseFilter=Control.MouseFilterEnum.Stop;
-        var scroll=new ScrollContainer {CustomMinimumSize=new(0,620),FollowFocus=true,HorizontalScrollMode=ScrollContainer.ScrollMode.Disabled};menu.AddChild(scroll);
-        var mv=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};mv.AddThemeConstantOverride("separation",7);scroll.AddChild(mv);
-        menuTitle=Text(mv,"A LITTLE SPACE. A LOT OF PRACTICE.",22);menuSummary=Text(mv,"",16);menuSummary.AutowrapMode=TextServer.AutowrapMode.WordSmart;
-        var scenarioRow=new HBoxContainer();mv.AddChild(scenarioRow);
-        var prev=Button(scenarioRow,"←",()=>CycleExercise(-1));prev.CustomMinimumSize=new(52,42);
-        var next=Button(scenarioRow,"Change parking exercise →",()=>CycleExercise(1));next.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
-        resumeButton=Button(mv,"Drive / Resume",()=>Pause(false));
-        resumeButton.AddThemeStyleboxOverride("normal",Style(accent,null,7));
-        var rr=new HBoxContainer();mv.AddChild(rr);
-        Button(rr,"Retry same setup",()=>NewScenario(false)).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
-        Button(rr,"New variation",()=>NewScenario(true)).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
-        var aidRow=new HBoxContainer();mv.AddChild(aidRow);
-        tutorButton=Button(aidRow,"",()=>{Tutor=!Tutor;UpdateMenu();SaveSettings();});tutorButton.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
-        Button(aidRow,"Watch demonstration",StartDemo).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
-        guideButton=Button(mv,"",()=>{DynamicGuides=!DynamicGuides;UpdateMenu();});
-        steeringButton=Button(mv,"",()=>{RateSteering=!RateSteering;UpdateMenu();SaveSettings();});
-        var sliders=new HBoxContainer();mv.AddChild(sliders);
-        Slider(sliders,"Field of view",55,100,1,Fov,v=>Fov=(float)v);
-        Slider(sliders,"Eye height (m)",1.04,1.30,.01,EyeHeight,v=>EyeHeight=(float)v);
-        Slider(mv,"Stick dead zone",.02,.25,.01,Deadzone,v=>Deadzone=(float)v);
-        muteButton=Button(mv,"",()=>{Muted=!Muted;UpdateMenu();SaveSettings();});
-        Button(mv,"Teaching map · pause to inspect",()=>{mapRect.Visible=!mapRect.Visible;}).TooltipText=Tr("An overhead teaching aid, not the car's surround camera.");
-        deviceLabel=Text(mv,"",13);deviceLabel.AutowrapMode=TextServer.AutowrapMode.WordSmart;
-        pedalStatus=Text(mv,"",15);
-        var pedalRow=new HBoxContainer();mv.AddChild(pedalRow);
-        Button(pedalRow,"Bind L2 brake",()=>BeginPedalBinding(BrakeAction));
-        Button(pedalRow,"Bind R2 gas",()=>BeginPedalBinding(GasAction));
-        Button(pedalRow,"Reset pedals",ResetPedalBindings);
-        var help=Text(mv,"RT gas · LT brake · left stick turn · right stick look\nLB R · RB D · A gear · Y display · X tutor · B console\nD-pad: menus only · right-stick click: parking brake\nKeyboard: W/S pedals · A/D steer · mouse look\n1 P · 2 R · 3 N · 4 D · Space parking brake\nZ centre wheel · C shoulder · V console · Home forward\nTab display · T tutor · Esc pause · F5 retry · F6 new",13);help.AutowrapMode=TextServer.AutowrapMode.WordSmart;
-        Text(mv,"Prototype 01 · generic car · uncalibrated sightlines",12,new("66756b"));
-        mapRect=Image(hud,mapViewport);mapRect.Position=new(1045,270);mapRect.Size=new(365,350);mapRect.Visible=false;
+        SetupMenu();
         SetupCockpitDisplays();
         resumeButton.GrabFocus();LayoutHud();
     }
     void Slider(Node parent,string name,double min,double max,double step,double value,Action<double> changed)
     {
-        var v=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};parent.AddChild(v);Text(v,name,13);
+        var v=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};parent.AddChild(v);
+        var header=new HBoxContainer();v.AddChild(header);Text(header,name,13).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
+        var readout=Text(header,value.ToString(step<1?"0.00":"0"),13);
         var slider=new HSlider {MinValue=min,MaxValue=max,Step=step,Value=value,CustomMinimumSize=new(230,20)};v.AddChild(slider);
-        slider.ValueChanged+=x=>{changed(x);SaveSettings();};
+        slider.ValueChanged+=x=>{readout.Text=x.ToString(step<1?"0.00":"0");changed(x);SaveSettings();};
     }
     void LayoutHud()
     {
@@ -103,22 +74,26 @@ public partial class ParkingGame
         var size=GetViewport().GetVisibleRect().Size;
         hud.Scale=new(size.X/1440,size.Y/900);
     }
-    void CycleExercise(int direction)
-    {
-        Exercise=(Exercise)(((int)Exercise+direction+3)%3);NewScenario(false);
-    }
-    string ExerciseName()=>Exercise switch {Exercise.Parallel=>Tr("Reverse parallel"),Exercise.ReverseBay=>Tr("Reverse 90° bay"),_=>Tr("Forward 90° bay")};
+    string ExerciseName()=>Tr(ExerciseTitle(Exercise));
     void UpdateMenu()
     {
         if(!IsInstanceValid(menu)) return;
-        menu.Visible=Paused;
-        menuSummary.Text=string.Format(Tr("{0} · variation {1}\nStarts in P with parking brake ON. Hold the brake, select R/D, then release the parking brake."),ExerciseName(),Seed);
+        menu.Visible=Paused;menuBackdrop.Visible=Paused;
+        menuTitle.Text=Tr(MenuPage switch {"scenarios"=>"Choose your scenario","options"=>"Options","controls"=>"Controller setup & controls","map"=>"Teaching map",_=>"Parking Practice"});
+        menuSummary.Text=MenuPage switch
+        {
+            "scenarios"=>Tr("Choose a parking type and how much room you have. Starting a new scenario replaces the current attempt."),
+            "options"=>Tr("Display, driving controls and parking assistance."),
+            "controls"=>Tr("Check the analog pedals, change bindings and review the controls."),
+            "map"=>Tr("An overhead teaching aid while paused. The car's surround-camera view is separate."),
+            _=>Scene==null?Tr("Approach, line up and park at your own pace."):string.Format(Tr("{0} · {1} · layout {2}\n{3:0.00} m {4} · Starts secured in P with the parking brake on."),ExerciseName(),DifficultyTitle(Difficulty),Seed,Exercise==Exercise.Parallel?Scene.Gap:Scene.BayWidth,Exercise==Exercise.Parallel?Tr("gap length"):Tr("bay width"))
+        };
+        mapRect.Visible=Paused && MenuPage=="map";
         tutorButton.Text=Tutor?Tr("Tutor: on"):Tr("Tutor: off");
-        guideButton.Text=DynamicGuides?Tr("Rear guides: follow steering"):Tr("Rear guides: fixed");
-        steeringButton.Text=RateSteering?Tr("Steering: turn & hold (stick release holds angle)"):Tr("Steering: stick angle (returns to centre)");
-        muteButton.Text=Muted?Tr("Parking beepers: muted"):Tr("Parking beepers: on");
+        guideButton.Text=DynamicGuides?Tr("Guides: steering"):Tr("Guides: fixed");
+        steeringButton.Text=RateSteering?Tr("Steering: turn & hold"):Tr("Steering: stick angle");
+        muteButton.Text=Muted?Tr("Beepers: muted"):Tr("Beepers: on");
         UpdateDeviceStatus();
-        if(Paused) resumeButton.GrabFocus();
     }
     void UpdateHud()
     {
@@ -134,8 +109,14 @@ public partial class ParkingGame
         if(Inspection) noticeLabel.Text=Tr("PARKING INSPECTION · mouse / right stick to orbit\nMouse wheel to zoom · B / Enter to return to cockpit");
         if(!Inspection && successTime>.8 && Car.Gear==Gear.P && Car.ParkingBrake) noticeLabel.Text=Tr("PARKED. Take your time, or try a new variation.");
         tutorPanel.Visible=Tutor&&!Paused&&!Inspection;
-        int index=Scene.ClosestPath(Car.Pose);double progress=(double)index/Math.Max(1,Scene.Path.Count-1);
-        if(progress<.08)
+        int index=Scene.ClosestPath(Car.Pose);
+        double progress=(double)Math.Max(0,index-Scene.ApproachEnd)/Math.Max(1,Scene.Path.Count-1-Scene.ApproachEnd);
+        if(index<Scene.ApproachEnd-8)
+        {
+            tutorHeading.Text=Tr("01 / APPROACH & SET UP");
+            tutorText.Text=Exercise==Exercise.Parallel?Tr("Select D and drive up to the gap. Leave room beside the parked cars. Choose where to stop beyond the space, observe around you, then hold the brake before selecting R."):Tr("Select D and approach along the aisle. Find the marked bay, choose your lateral clearance and stopping point, and check both sides before turning or selecting R.");
+        }
+        else if(progress<.08)
         {
             tutorHeading.Text=Tr("01 / SET UP & OBSERVE");
             tutorText.Text=Exercise==Exercise.Parallel?Tr("Find the rear corner of the car beside you. Check the gap and your right mirror. Brake held; select R, then release the parking brake."):Tr("Check both bay lines and the cars on either side. Observe around the car before moving. Hold the brake while choosing D or R.");
@@ -156,7 +137,7 @@ public partial class ParkingGame
             tutorText.Text=Tr("Centre the wheels and creep to a good stopping position. Use mirrors and the camera together. Hold the brake, select P, then apply the parking brake.");
         }
         metricsLabel.Text=string.Format(Tr("Goal offset {0:0.00} m · angle {1:0}° · contacts {2}"),Scene.PositionError(Car.Pose),DrivingModel.AngleError(Car.Pose.Yaw,Scene.Goal.Yaw)*180/Math.PI,Car.Contacts);
-        menu.Visible=Paused;
+        menu.Visible=Paused;menuBackdrop.Visible=Paused;
         if(Paused) UpdateDeviceStatus();
     }
 }
