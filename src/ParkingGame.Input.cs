@@ -26,14 +26,15 @@ public partial class ParkingGame
         GD.Print(passed?"HARDWARE CHECK PASS: physical analog triggers received":"HARDWARE CHECK INCOMPLETE: both physical triggers need a slow full press");
         GetTree().Quit(passed?0:2);
     }
-    bool CaptureDrivingMouse=>!Paused&&!autoCapture&&!webCheck;
+    bool CaptureDrivingMouse=>!Paused&&!autoCapture&&!webCheck&&!TouchEnabled;
     bool NativeDriving=>modernController?.Connected==true && selectedController==ModernController.Device;
     float PedalStrength(string action)
     {
         bool gas=action==GasAction;
+        float touch=TouchEnabled&&!Paused&&IsInstanceValid(touchControls)?(gas?touchControls.Gas:touchControls.Brake):0;
         if(NativeDriving && (gas?gasBinding:brakeBinding)==null)
-            return Mathf.Clamp((modernController.Axes[gas?5:4]-.02f)/.98f,0,1);
-        return Input.GetActionStrength(action);
+            return Mathf.Max(touch,Mathf.Clamp((modernController.Axes[gas?5:4]-.02f)/.98f,0,1));
+        return Mathf.Max(touch,Input.GetActionStrength(action));
     }
 
     void UpdateMouseCapture()
@@ -56,18 +57,19 @@ public partial class ParkingGame
     }
     void SetupPedalActions()
     {
-        ConfigurePedal(GasAction,JoyAxis.TriggerRight,Key.W,MouseButton.Left,gasBinding);
-        ConfigurePedal(BrakeAction,JoyAxis.TriggerLeft,Key.S,MouseButton.Right,brakeBinding);
+        ConfigurePedal(GasAction,JoyAxis.TriggerRight,Key.W,MouseButton.Left,gasBinding,!TouchEnabled);
+        ConfigurePedal(BrakeAction,JoyAxis.TriggerLeft,Key.S,MouseButton.Right,brakeBinding,!TouchEnabled);
     }
-    static void ConfigurePedal(string action,JoyAxis axis,Key key,MouseButton mouse,InputEvent? binding)
+    static void ConfigurePedal(string action,JoyAxis axis,Key key,MouseButton mouse,InputEvent? binding,bool allowMouse)
     {
         if(!InputMap.HasAction(action)) InputMap.AddAction(action,.02f);
         InputMap.ActionEraseEvents(action);
         // Accept Steam's virtual gamepad even if it is not the first enumerated device.
+        if(!allowMouse && binding is InputEventMouseButton) binding=null;
         InputMap.ActionAddEvent(action,binding??new InputEventJoypadMotion {Device=-1,Axis=axis,AxisValue=1});
         InputMap.ActionAddEvent(action,new InputEventKey {PhysicalKeycode=key});
         // Steam's keyboard/mouse templates send clicks, not analog trigger axes.
-        InputMap.ActionAddEvent(action,new InputEventMouseButton {ButtonIndex=mouse});
+        if(allowMouse) InputMap.ActionAddEvent(action,new InputEventMouseButton {ButtonIndex=mouse});
     }
     void ReadPedals()
     {
@@ -87,6 +89,15 @@ public partial class ParkingGame
     }
     public override void _Input(InputEvent ev)
     {
+        if(ev is InputEventScreenTouch touch && touch.Pressed && !touchSeen)
+        {
+            touchSeen=true;
+            if(TouchMode==0)
+            {
+                SetTouchMode(0);
+                if(!Paused) {touchControls.Pointer(touch.Index,touch.Position,true,touch.Canceled);GetViewport().SetInputAsHandled();return;}
+            }
+        }
         // The standalone SDL reader has no window, so suppress its UI actions
         // while this Godot window is unfocused. Raw state is still available to diagnostics.
         if(ev is InputEventJoypadButton or InputEventJoypadMotion && !smokeMode && !controllerCheck && !GetWindow().HasFocus())

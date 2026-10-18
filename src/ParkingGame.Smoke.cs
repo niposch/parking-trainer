@@ -147,7 +147,7 @@ public partial class ParkingGame
             Tap(Key.Enter);await PhysicsFrames(5);
             Check(!Inspection && eye.Current && Car.ParkingBrake,"Return from inspection restores cockpit without releasing the parking brake");
             int cameraBefore=CameraMode;Tap(Key.Tab);await PhysicsFrames(3);Check(CameraMode==(cameraBefore+1)%2 && sensorGraphic.Visible && (rearRect.Visible||surroundRect.Visible),"Camera and stepped sensors remain visible together when changing display");
-            bool tutorBefore=Tutor;Tap(Key.T);await PhysicsFrames(3);Check(Tutor!=tutorBefore,"Tutor toggle");
+            bool hintBefore=HintCollapsed;Tap(Key.T);await PhysicsFrames(3);Check(Tutor && HintCollapsed!=hintBefore,"Hint collapse shortcut");
             Tap(Key.Escape);await PhysicsFrames(3);Check(Paused,"Pause input");SendKey(Key.S,false);
             float yawBefore=LookYaw;Input.ParseInputEvent(new InputEventMouseMotion {ScreenRelative=new(100,0)});await PhysicsFrames(3);
             Check(!CaptureDrivingMouse && LookYaw==yawBefore,"Pause releases mouse and suppresses mouse look");
@@ -166,6 +166,7 @@ public partial class ParkingGame
                 if(exercise!=Exercise.ForwardBay) Check(sawReverse,$"{exercise}/{difficulty}/{(mirrored?"right":"left")} demonstration shifts from approach into reverse parking");
             }
             await PhysicsFrames(4);
+            passed+=await CheckTouchControls();
             GD.Print($"SMOKE COMPLETE: {passed} runtime input/UI/demonstration checks passed.");GetTree().Quit();
         }
         catch(Exception error) {GD.PushError("SMOKE FAILED: "+error);GetTree().Quit(1);}

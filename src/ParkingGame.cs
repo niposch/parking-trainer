@@ -74,6 +74,7 @@ public partial class ParkingGame : Node3D
     }
     internal void NewScenario(bool newSeed)
     {
+        touchControls?.ReleaseAll();
         if(newSeed) Seed=Random.Shared.Next(1,999999);
         Scene=Scenario.Create(Exercise,Seed,Difficulty,MirrorBay);
         if(lot!=null) {RemoveChild(lot);lot.QueueFree();}
@@ -101,6 +102,7 @@ public partial class ParkingGame : Node3D
             if(captureView.StartsWith("asset")) {Car.Pose=new(8,8,0);Tutor=false;}
             Car.Steer=-.4;
             if(captureView=="approach") {Car.Gear=Gear.P;Car.Steer=0;}
+            if(captureView=="touch") {SetTouchMode(1);Car.Gear=Gear.P;Car.Steer=0;}
         }
         ApplyPose(); ShowMenuPage("home"); UpdateViews();
         if(autoCapture)
@@ -116,6 +118,7 @@ public partial class ParkingGame : Node3D
     {
         if(Paused==pause) return;
         Paused=pause; Gas=0; Brake=1; Car.Speed=0; Demo=false;
+        touchControls?.ReleaseAll();RefreshTouchControls();
         UpdateMouseCapture();
         if(IsInstanceValid(menu)) {menu.Visible=pause;menuBackdrop.Visible=pause;if(pause) ShowMenuPage("home");}
         SaveSettings();
@@ -139,7 +142,7 @@ public partial class ParkingGame : Node3D
             return;
         }
         if(key(Key.Tab)||pad(JoyButton.Y)) {CameraMode=(CameraMode+1)%2;SaveSettings();}
-        if(key(Key.T)||pad(JoyButton.X)) {Tutor=!Tutor;SaveSettings();}
+        if(key(Key.T)||pad(JoyButton.X)) ToggleHint();
         if(key(Key.G)) DynamicGuides=!DynamicGuides;
         if(key(Key.Space)||pad(JoyButton.RightStick)) {Car.ParkingBrake=!Car.ParkingBrake;Message(Car.ParkingBrake?"Parking brake on":"Parking brake released");}
         if(key(Key.Key1)) Shift(Gear.P);
@@ -179,7 +182,7 @@ public partial class ParkingGame : Node3D
             else
             {
                 ReadPedals();
-                double steerInput=-Dead(Axis(JoyAxis.LeftX))+(!NativeDriving&&Input.IsPhysicalKeyPressed(Key.A)?1:0)-(!NativeDriving&&Input.IsPhysicalKeyPressed(Key.D)?1:0);
+                double steerInput=-Dead(Axis(JoyAxis.LeftX))+(TouchEnabled?touchControls.Steering:0)+(!NativeDriving&&Input.IsPhysicalKeyPressed(Key.A)?1:0)-(!NativeDriving&&Input.IsPhysicalKeyPressed(Key.D)?1:0);
                 steerInput=Math.Clamp(steerInput,-1,1);
                 if(RateSteering) Car.Steer=Math.Clamp(Car.Steer+steerInput*1.0*SteeringSensitivity*delta,-CarSpec.MaxSteer,CarSpec.MaxSteer);
                 else Car.Steer=Mathf.MoveToward((float)Car.Steer,(float)(steerInput*CarSpec.MaxSteer),dt*SteeringSensitivity*.95f);
@@ -256,6 +259,7 @@ public partial class ParkingGame : Node3D
         if(autoCapture && !captureTaken && frames>=100 && Time.GetTicksMsec()-captureStarted>2500)
         {
             captureTaken=true;
+            GD.Print($"Layout: window {GetWindow().Size}, viewport {GetViewport().GetVisibleRect().Size}, menu {menu.Size}, minimum {menu.GetCombinedMinimumSize()}");
             await ToSignal(RenderingServer.Singleton,RenderingServer.SignalName.FramePostDraw);
             var screenshot=GetViewport().GetTexture().GetImage();
             var error=screenshot.SavePng(capturePath);GD.Print($"Capture {capturePath}: {error}; {Engine.GetFramesPerSecond()} FPS");GetTree().Quit();
@@ -268,7 +272,8 @@ public partial class ParkingGame : Node3D
         {windowedSize=DisplayServer.WindowGetSize();windowedPosition=DisplayServer.WindowGetPosition();}
         var cfg=new ConfigFile();cfg.SetValue("view","layout_version",2);cfg.SetValue("view","eye_height",EyeHeight);cfg.SetValue("view","fov",Fov);
         cfg.SetValue("input","rate_steering",RateSteering);cfg.SetValue("input","deadzone",Deadzone);
-        cfg.SetValue("preferences","tutor",Tutor);cfg.SetValue("preferences","muted",Muted);cfg.SetValue("preferences","beeper_volume",BeeperVolume);
+        cfg.SetValue("input","touch_controls",TouchMode);
+        cfg.SetValue("preferences","hint_collapsed",HintCollapsed);cfg.SetValue("preferences","tutor",Tutor);cfg.SetValue("preferences","muted",Muted);cfg.SetValue("preferences","beeper_volume",BeeperVolume);
         cfg.SetValue("preferences","dynamic_guides",DynamicGuides);
         cfg.SetValue("practice","exercise",(int)Exercise);cfg.SetValue("practice","difficulty",(int)Difficulty);cfg.SetValue("practice","mirrored_bay",MirrorBay);
         cfg.SetValue("display","mode",DisplayMode);cfg.SetValue("display","window_size",windowedSize);cfg.SetValue("display","window_position",windowedPosition);
@@ -282,6 +287,8 @@ public partial class ParkingGame : Node3D
         if((int)cfg.GetValue("view","layout_version",0)!=2) return;
         EyeHeight=(float)cfg.GetValue("view","eye_height",1.20f);Fov=(float)cfg.GetValue("view","fov",76f);
         RateSteering=(bool)cfg.GetValue("input","rate_steering",true);Deadzone=(float)cfg.GetValue("input","deadzone",.10f);
+        TouchMode=Math.Clamp((int)cfg.GetValue("input","touch_controls",0),0,2);
+        HintCollapsed=(bool)cfg.GetValue("preferences","hint_collapsed",true);
         Tutor=(bool)cfg.GetValue("preferences","tutor",true);Muted=(bool)cfg.GetValue("preferences","muted",false);
         BeeperVolume=Mathf.Clamp((float)cfg.GetValue("preferences","beeper_volume",1f),0,1);
         DynamicGuides=(bool)cfg.GetValue("preferences","dynamic_guides",true);

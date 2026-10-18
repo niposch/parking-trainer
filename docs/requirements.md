@@ -195,3 +195,11 @@ Sources accessed 18 October 2026. Manufacturer manuals describe example equipmen
 [sensors]: https://www.seat.com/datamanual-manual/tarraco/my21_w30/en-uk/TARRACO_07_20_EN.pdf
 [adac]: https://www.adac.de/verkehr/verkehrssicherheit/unterwegs/richtig-einparken/
 [i18n]: https://docs.godotengine.org/en/stable/tutorials/i18n/internationalizing_games.html
+
+## Touch, window fill and hint update — 18 October 2026
+
+- Keep the standalone Git project in `C:\Users\Nickp\Development\parking-trainer`.
+- Support optional on-screen controls on Windows and web, with saved Auto / On / Off overrides. Auto detects touch-capable/mobile devices and actual touch events. Independent pointers permit simultaneous analog gas, brake, steering and camera look; preserve realistic separate gear selection and parking brake.
+- Support touch inspection orbit/zoom/return, and release held inputs on pause, resize and focus loss.
+- Fill desktop/browser windows at any aspect ratio without black bars or world stretching. Reflow/scroll menus for small portrait and landscape windows.
+- Make the tutor hint collapsible to its phase header, preserving tutoring while freeing the view. Provide a touchable header, Hint button, T/controller X and a persisted state; keep the separate Tutor on/off option.

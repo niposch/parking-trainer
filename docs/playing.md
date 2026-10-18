@@ -20,7 +20,7 @@ The mouse is captured while driving and moves the driver's head. Escape pauses a
 | Shoulder view / forward view | Mouse / right stick | C / Home |
 | Look down at center console | Right face button (B mapping) | V |
 | Rear camera + sensors ↔ surround camera + sensors | Top face button (Y mapping) | Tab |
-| Toggle tutor | Left face button (X mapping) | T |
+| Expand/collapse hint | Left face button (X mapping) | T |
 | Pause / resume | Start | Escape |
 | Open menu | Back | F1 |
 | Retry / new variation | Pause menu | F5 / F6 |
@@ -66,3 +66,11 @@ The bay side is saved, retained by Retry/New variation and shown on pause home. 
 The selector shows these ranges; pause home shows the actual generated size. Difficulty changes physical space dimensions, independently of tutor/camera assistance. Layout generation validates a complete collision-free approach and parking witness without silently enlarging the selected space. Generator version 2 intentionally changes the layouts produced by earlier seeds.
 
 Parking audio now uses lower-pitched tones while retaining the original loudness and repeat timing, as requested. The close-range warning remains continuous and uses a smooth loop. **Esc → Options → Beeper volume (%)** adjusts the level; 0% is silent, and the separate mute button is still available. The level is saved between sessions.
+
+## Touch and hint controls
+
+Options → On-screen controls offers Auto, On and Off on Windows and web. Auto uses touch-device detection and also reacts to the first real touch. On overrides detection and can be used with a mouse on desktop; Off overrides touch detection. The choice persists.
+
+Hold/drag the left pad to steer. Gas and brake are independent: touch near the top for full pressure, near the bottom for light pressure; release to let go. Hold the brake while selecting P/R/N/D; P BRAKE is a separate toggle. Drag elsewhere to look. Multiple fingers can hold steering, pedals and look independently. Menu pauses and releases held controls; View changes the console camera. After parking, drag to orbit, use +/− to zoom and Return to cockpit to continue.
+
+The hint starts as a single phase header. Tap/click its header, tap Hint, or press T / controller X to expand or collapse it. Collapse preserves tutor cues; Options → Tutor turns them off. Collapse state persists. Menus scroll/reflow on narrow screens. Rendering fills the window at any aspect ratio without stretching the world or adding black bars.

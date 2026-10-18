@@ -19,6 +19,12 @@ public partial class ParkingGame
     Label scenarioDetails=null!;
     ScrollContainer menuScroll=null!;
     ColorRect menuBackdrop=null!;
+    GridContainer scenarioCards=null!;
+    readonly List<BoxContainer> responsiveRows=new();
+    BoxContainer Row(Node parent,int spacing=12)
+    {
+        var row=new BoxContainer();row.AddThemeConstantOverride("separation",spacing);parent.AddChild(row);responsiveRows.Add(row);return row;
+    }
 
     void SetupMenu()
     {
@@ -28,10 +34,12 @@ public partial class ParkingGame
         var root=new VBoxContainer();root.AddThemeConstantOverride("separation",12);menu.AddChild(root);
         var header=new HBoxContainer();header.AddThemeConstantOverride("separation",18);root.AddChild(header);
         menuBack=Button(header,"Back",BackOrResume);
+        menuBack.CustomMinimumSize=new(90,44);
         menuTitle=Text(header,"Parking Practice",28);menuTitle.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
+        menuTitle.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         menuSummary=Text(root,"",16);menuSummary.AutowrapMode=TextServer.AutowrapMode.WordSmart;menuSummary.CustomMinimumSize=new(0,50);
         root.AddChild(new HSeparator());
-        menuScroll=new ScrollContainer {CustomMinimumSize=new(0,475),FollowFocus=true,SizeFlagsVertical=Control.SizeFlags.ExpandFill,HorizontalScrollMode=ScrollContainer.ScrollMode.Disabled};root.AddChild(menuScroll);
+        menuScroll=new ScrollContainer {FollowFocus=true,SizeFlagsVertical=Control.SizeFlags.ExpandFill,HorizontalScrollMode=ScrollContainer.ScrollMode.Disabled};root.AddChild(menuScroll);
         var host=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};menuScroll.AddChild(host);
         VBoxContainer Page(string name)
         {
@@ -43,28 +51,28 @@ public partial class ParkingGame
         resumeButton.AddThemeStyleboxOverride("normal",Style(accent,null,7));
         Button(home,"Choose scenario",OpenScenarioSelection);
         Button(home,"Options",()=>ShowMenuPage("options"));
-        var retry=new HBoxContainer();retry.AddThemeConstantOverride("separation",12);home.AddChild(retry);
+        var retry=Row(home);
         Button(retry,"Retry this layout",()=>NewScenario(false)).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
         Button(retry,"New variation",()=>NewScenario(true)).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
         Button(home,"Watch approach + parking demonstration",StartDemo);
-        if(IsWeb) Text(home,"Click Continue driving to capture the mouse and enable audio. Esc pauses and releases the mouse.",14);
+        if(IsWeb) Text(home,"Continue driving enables audio. With touch controls off, click to capture the mouse. Esc pauses and releases it.",14).AutowrapMode=TextServer.AutowrapMode.WordSmart;
         else Button(home,"Exit game",()=>{SaveSettings();GetTree().Quit();});
 
         var scenarios=Page("scenarios");
         Text(scenarios,"PARKING TYPE",13,new("52675f"));
-        var cards=new HBoxContainer();cards.AddThemeConstantOverride("separation",12);scenarios.AddChild(cards);
+        var cards=new GridContainer {Columns=3};cards.AddThemeConstantOverride("h_separation",12);cards.AddThemeConstantOverride("v_separation",12);scenarios.AddChild(cards);scenarioCards=cards;
         foreach(Exercise exercise in Enum.GetValues<Exercise>())
         {
             var card=Button(cards,"",()=>{SelectedExercise=exercise;RefreshScenarioSelection();});
-            card.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;card.CustomMinimumSize=new(250,200);exerciseCards[(int)exercise]=card;
+            card.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;card.CustomMinimumSize=new(0,200);exerciseCards[(int)exercise]=card;
             var contents=new VBoxContainer {Position=new(12,10),MouseFilter=Control.MouseFilterEnum.Ignore};card.AddChild(contents);
             contents.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);contents.OffsetLeft=12;contents.OffsetRight=-12;contents.OffsetTop=8;contents.OffsetBottom=-8;
-            var diagram=new ParkingDiagram {Exercise=exercise,CustomMinimumSize=new(220,130),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
+            var diagram=new ParkingDiagram {Exercise=exercise,CustomMinimumSize=new(0,130),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
             contents.AddChild(diagram);parkingDiagrams[(int)exercise]=diagram;
             var title=Text(contents,ExerciseTitle(exercise),17);title.HorizontalAlignment=HorizontalAlignment.Center;
             var note=Text(contents,exercise==Exercise.ForwardBay?"Drive into the bay":"Reverse into the space",13,new("52675f"));note.HorizontalAlignment=HorizontalAlignment.Center;
         }
-        var choices=new HBoxContainer();choices.AddThemeConstantOverride("separation",20);scenarios.AddChild(choices);
+        var choices=Row(scenarios,20);
         var difficultyChoices=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill,SizeFlagsStretchRatio=2};choices.AddChild(difficultyChoices);
         Text(difficultyChoices,"SPACE DIFFICULTY",13,new("52675f"));
         var difficulties=new HBoxContainer();difficulties.AddThemeConstantOverride("separation",12);difficultyChoices.AddChild(difficulties);
@@ -92,19 +100,23 @@ public partial class ParkingGame
         displaySelector.AddThemeFontSizeOverride("font_size",17);displaySelector.AddThemeColorOverride("font_color",ink);displaySelector.AddThemeColorOverride("font_hover_color",ink);displaySelector.AddThemeColorOverride("font_pressed_color",ink);displaySelector.AddThemeColorOverride("font_focus_color",ink);
         displaySelector.AddThemeStyleboxOverride("normal",Style(new("e0e3d8"),null,7));displaySelector.AddThemeStyleboxOverride("hover",Style(accent,null,7));displaySelector.AddThemeStyleboxOverride("pressed",Style(accent,null,7));
         displaySelector.Select(DisplayMode);displaySelector.ItemSelected+=index=>ApplyWindowMode((int)index);options.AddChild(displaySelector);
-        var views=new HBoxContainer();views.AddThemeConstantOverride("separation",24);options.AddChild(views);
+        Text(options,"ON-SCREEN CONTROLS",13,new("52675f"));
+        touchSelector=new OptionButton {CustomMinimumSize=new(0,44),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
+        foreach(string label in new[]{"Auto (touch devices)","On","Off"}) touchSelector.AddItem(Tr(label));
+        touchSelector.Select(TouchMode);touchSelector.ItemSelected+=index=>SetTouchMode((int)index);options.AddChild(touchSelector);
+        var views=Row(options,24);
         Slider(views,"Field of view",55,100,1,Fov,v=>Fov=(float)v);
         Slider(views,"Eye height (m)",1.04,1.30,.01,EyeHeight,v=>EyeHeight=(float)v);
         Text(options,"DRIVING & ASSISTANCE",13,new("52675f"));
         steeringButton=Button(options,"",()=>{RateSteering=!RateSteering;UpdateMenu();SaveSettings();});
         Slider(options,"Stick dead zone",.02,.25,.01,Deadzone,v=>Deadzone=(float)v);
-        var aids=new HBoxContainer();aids.AddThemeConstantOverride("separation",12);options.AddChild(aids);
+        var aids=Row(options);
         tutorButton=Button(aids,"",()=>{Tutor=!Tutor;UpdateMenu();SaveSettings();});
         guideButton=Button(aids,"",()=>{DynamicGuides=!DynamicGuides;UpdateMenu();SaveSettings();});
         muteButton=Button(aids,"",()=>{Muted=!Muted;UpdateMenu();SaveSettings();});
         foreach(var toggle in new[]{tutorButton,guideButton,muteButton}) toggle.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
         Slider(options,"Beeper volume (%)",0,100,5,BeeperVolume*100,v=>BeeperVolume=(float)v/100);
-        var tools=new HBoxContainer();tools.AddThemeConstantOverride("separation",12);options.AddChild(tools);
+        var tools=Row(options);
         Button(tools,"Controller setup & controls",()=>ShowMenuPage("controls")).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
         Button(tools,"Teaching map",()=>ShowMenuPage("map")).TooltipText=Tr("A paused teaching aid, separate from the car's surround camera.");
 
@@ -113,13 +125,14 @@ public partial class ParkingGame
         var controls=Page("controls");
         deviceLabel=Text(controls,"",14);deviceLabel.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         pedalStatus=Text(controls,"",16);
-        var pedals=new HBoxContainer();pedals.AddThemeConstantOverride("separation",10);controls.AddChild(pedals);
+        pedalStatus.AutowrapMode=TextServer.AutowrapMode.WordSmart;
+        var pedals=Row(controls,10);
         controlsFirst=Button(pedals,"Bind L2 brake",()=>BeginPedalBinding(BrakeAction));
         Button(pedals,"Bind R2 gas",()=>BeginPedalBinding(GasAction));Button(pedals,"Reset pedals",ResetPedalBindings);
-        var help=Text(controls,"RT gas · LT brake · left stick turn · right stick look\nLB R · RB D · A gear · Y display · X tutor · B console\nRight-stick click: parking brake · D-pad: menus only\n\nW/S pedals · A/D steer · mouse look\n1 P · 2 R · 3 N · 4 D · Space parking brake\nZ centre wheel · C shoulder · V console · Home forward\nTab display · T tutor · Esc pause/back · F5 retry · F6 new",16);
+        var help=Text(controls,"RT gas · LT brake · left stick turn · right stick look\nLB R · RB D · A gear · Y display · X hint · B console\nRight-stick click: parking brake · D-pad: menus only\n\nW/S pedals · A/D steer · mouse look\n1 P · 2 R · 3 N · 4 D · Space parking brake\nZ centre wheel · C shoulder · V console · Home forward\nTab display · T hint · Esc pause/back · F5 retry · F6 new",16);
         help.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         var map=Page("map");mapRect=Image(map,mapViewport);mapRect.CustomMinimumSize=new(0,430);mapRect.StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered;
-        Text(root,"D-pad / arrows: navigate   ·   A / Enter: select   ·   B / Esc: back",13,new("52675f"));
+        Text(root,"D-pad / arrows: navigate   ·   A / Enter: select   ·   B / Esc: back",13,new("52675f")).AutowrapMode=TextServer.AutowrapMode.WordSmart;
         ShowMenuPage("home");
     }
     static string ExerciseTitle(Exercise exercise)=>exercise switch {Exercise.Parallel=>"Reverse parallel",Exercise.ReverseBay=>"Reverse 90° bay",_=>"Forward 90° bay"};

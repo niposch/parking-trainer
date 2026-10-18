@@ -8,9 +8,17 @@ public partial class ParkingGame
     internal Button resumeButton=null!;
     internal TextureRect mapRect=null!;
     TextureRect rearRect=null!,surroundRect=null!;
-    Label gearLabel=null!,speedLabel=null!,steerLabel=null!,sensorLabel=null!,noticeLabel=null!,tutorHeading=null!,tutorText=null!,cameraLabel=null!,metricsLabel=null!;
+    Label gearLabel=null!,speedLabel=null!,steerLabel=null!,sensorLabel=null!,noticeLabel=null!,tutorText=null!,cameraLabel=null!,metricsLabel=null!;
     Label menuTitle=null!,menuSummary=null!,deviceLabel=null!;
     PanelContainer tutorPanel=null!;
+    Button tutorHeading=null!;
+    bool HintCollapsed=true;
+    void ToggleHint() {HintCollapsed=Tutor?!HintCollapsed:false;Tutor=true;ApplyHintLayout();SaveSettings();}
+    void ApplyHintLayout()
+    {
+        tutorText.Visible=!HintCollapsed;
+        tutorPanel.Size=new(370,HintCollapsed?0:210);
+    }
     Button tutorButton=null!,guideButton=null!,steeringButton=null!,muteButton=null!;
     Color cream=new("f0f0e5"),ink=new("14262b"),accent=new("cff59f");
     StyleBoxFlat Style(Color color,Color? border=null,int radius=12)
@@ -31,7 +39,7 @@ public partial class ParkingGame
     }
     Button Button(Node parent,string text,Action pressed)
     {
-        var button=new Button {Text=Tr(text),CustomMinimumSize=new(0,42),MouseDefaultCursorShape=Control.CursorShape.PointingHand};
+        var button=new Button {Text=Tr(text),ClipText=true,TextOverrunBehavior=TextServer.OverrunBehavior.TrimEllipsis,CustomMinimumSize=new(0,44),MouseDefaultCursorShape=Control.CursorShape.PointingHand};
         button.AddThemeFontSizeOverride("font_size",17);button.AddThemeColorOverride("font_color",ink);
         button.AddThemeColorOverride("font_hover_color",ink);button.AddThemeColorOverride("font_pressed_color",ink);button.AddThemeColorOverride("font_focus_color",ink);
         button.AddThemeStyleboxOverride("normal",Style(new("e0e3d8"),null,7));
@@ -49,15 +57,16 @@ public partial class ParkingGame
         var layer=new CanvasLayer();AddChild(layer);
         hud=new Control {LayoutMode=0};hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);layer.AddChild(hud);
         // Fixed design space follows the actual viewport without changing camera FOV.
-        hud.Resized+=LayoutHud;
+        GetViewport().SizeChanged+=LayoutHud;
         tutorPanel=Panel(hud,new(22,22),new(370,210),cream);var tv=new VBoxContainer();tutorPanel.AddChild(tv);
-        tutorHeading=Text(tv,"01 / SET UP",16);tutorText=Text(tv,"",16);tutorText.AutowrapMode=TextServer.AutowrapMode.WordSmart;tutorText.CustomMinimumSize=new(330,130);
+        tutorHeading=Button(tv,"01 / SET UP",ToggleHint);tutorHeading.Alignment=HorizontalAlignment.Left;tutorHeading.AddThemeFontSizeOverride("font_size",14);tutorText=Text(tv,"",16);tutorText.AutowrapMode=TextServer.AutowrapMode.WordSmart;tutorText.CustomMinimumSize=new(330,130);
         metricsLabel=Text(tv,"",13,new("52675f"));
-        metricsLabel.Hide();
+        metricsLabel.Hide();ApplyHintLayout();
         noticeLabel=Text(hud,"",18,cream);noticeLabel.Position=new(470,800);noticeLabel.Size=new(500,65);noticeLabel.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         noticeLabel.AddThemeColorOverride("font_shadow_color",ink);noticeLabel.AddThemeConstantOverride("shadow_offset_x",1);noticeLabel.AddThemeConstantOverride("shadow_offset_y",2);
         SetupMenu();
         SetupCockpitDisplays();
+        SetupTouchControls();
         resumeButton.GrabFocus();LayoutHud();
     }
     void Slider(Node parent,string name,double min,double max,double step,double value,Action<double> changed)
@@ -72,7 +81,22 @@ public partial class ParkingGame
     {
         if(!IsInstanceValid(hud)) return;
         var size=GetViewport().GetVisibleRect().Size;
-        hud.Scale=new(size.X/1440,size.Y/900);
+        float unit=1/Mathf.Max(.01f,GetViewport().GetScreenTransform().Scale.X);
+        var pixels=size/unit;
+        hud.Scale=Vector2.One;
+        var menuSize=new Vector2(Mathf.Min(860,pixels.X-24),Mathf.Min(700,pixels.Y-24));
+        bool narrow=menuSize.X<700;
+        scenarioCards.Columns=narrow?1:3;
+        foreach(var row in responsiveRows) row.Vertical=narrow;
+        menu.Scale=Vector2.One*unit;menu.Size=menuSize;menu.Position=(size-menu.Size*unit)/2;
+        menuTitle.AddThemeFontSizeOverride("font_size",narrow?22:28);
+        float tutorWidth=TouchEnabled&&pixels.X>=620&&pixels.X>pixels.Y&&pixels.Y<520?pixels.X-320:pixels.X-24;
+        float tutorScale=unit*Mathf.Min(1,tutorWidth/370);
+        tutorPanel.Scale=Vector2.One*tutorScale;tutorPanel.Position=new(12*unit,(TouchEnabled&&pixels.X<620?70:12)*unit);
+        noticeLabel.Scale=Vector2.One*unit;
+        noticeLabel.Size=new(Mathf.Min(520,pixels.X-24),70);
+        noticeLabel.Position=new((size.X-noticeLabel.Size.X*unit)/2,size.Y-(TouchEnabled?260:90)*unit);
+        touchControls?.ResizeToViewport();
     }
     string ExerciseName()=>Exercise==Exercise.Parallel?Tr(ExerciseTitle(Exercise)):string.Format(Tr("{0} ({1})"),Tr(ExerciseTitle(Exercise)),Tr(MirrorBay?"right":"left"));
     void UpdateMenu()
@@ -97,6 +121,16 @@ public partial class ParkingGame
     }
     void UpdateHud()
     {
+        RefreshTouchControls();
+        if(Paused)
+        {
+            // Containers may lower their minimum size a frame after reflow.
+            // Reapply the fit once that deferred layout has completed.
+            var size=GetViewport().GetVisibleRect().Size;
+            float unit=1/Mathf.Max(.01f,GetViewport().GetScreenTransform().Scale.X);
+            menu.Size=new(Mathf.Min(860,size.X/unit-24),Mathf.Min(700,size.Y/unit-24));
+            menu.Position=(size-menu.Size*unit)/2;
+        }
         gearLabel.Text=Car.Gear.ToString();speedLabel.Text=string.Format(Tr("{0:0.0}"),Math.Abs(Car.Speed)*3.6);
         steerLabel.Text=Car.ParkingBrake?"(P)":"";
         string distance(double d)=>d>=1.99?"—":$"{d:0.00} m";
@@ -136,6 +170,9 @@ public partial class ParkingGame
             tutorHeading.Text=Tr("04 / STRAIGHTEN & SECURE");
             tutorText.Text=Tr("Centre the wheels and creep to a good stopping position. Use mirrors and the camera together. Hold the brake, select P, then apply the parking brake.");
         }
+        tutorHeading.Text=(HintCollapsed?"[+] ":"[-] ")+tutorHeading.Text;
+        ApplyHintLayout();
+        if(IsInstanceValid(touchControls)) touchControls.HintHeader=tutorPanel.Visible?tutorHeading.GetGlobalRect():default;
         metricsLabel.Text=string.Format(Tr("Goal offset {0:0.00} m · angle {1:0}° · contacts {2}"),Scene.PositionError(Car.Pose),DrivingModel.AngleError(Car.Pose.Yaw,Scene.Goal.Yaw)*180/Math.PI,Car.Contacts);
         menu.Visible=Paused;menuBackdrop.Visible=Paused;
         if(Paused) UpdateDeviceStatus();
