@@ -1,0 +1,20 @@
+# Godot-generated files
+.godot/
+*.translation
+
+# .NET build output and local IDE files
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+
+# Export output and locally acquired restricted assets
+builds/
+exports/
+local-assets/
+
+# Local secrets
+.env
+.env.*
