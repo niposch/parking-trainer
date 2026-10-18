@@ -98,3 +98,5 @@ Windows build: zero warnings/errors; **124 headless runtime checks passed**. The
 Fullscreen implementation follows [Godot's browser input-event requirement](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html#full-screen-and-mouse-capture). Browser UI sizing uses [DisplayServer screen scale](https://docs.godotengine.org/en/stable/classes/class_displayserver.html#class-displayserver-method-screen-get-scale).
 
 The final export passed **110 actual browser runtime checks** on a fresh plain static-host subdirectory, including first-load worker isolation, with no console errors. Physical phone fullscreen and controller checks remain separate.
+
+Published runtime revision `ff49484` in [successful Pages run 39162154796](https://github.com/niposch/parking-trainer/actions/runs/39162154796). The actual public HTTPS game passed all **110 browser checks** without console errors. The public manifest reports `display: fullscreen`. An initial controlled tab still used the old cached build; closing it and reopening activated the updated worker and the new 110-check build.
