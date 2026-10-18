@@ -203,3 +203,7 @@ Sources accessed 18 October 2026. Manufacturer manuals describe example equipmen
 - Support touch inspection orbit/zoom/return, and release held inputs on pause, resize and focus loss.
 - Fill desktop/browser windows at any aspect ratio without black bars or world stretching. Reflow/scroll menus for small portrait and landscape windows.
 - Make the tutor hint collapsible to its phase header, preserving tutoring while freeing the view. Provide a touchable header, Hint button, T/controller X and a persisted state; keep the separate Tutor on/off option.
+
+## Compact hint and publication — 18 October 2026
+
+Collapsed tutoring must occupy only one hint icon, without a phase-title banner. Publish source to `niposch/parking-trainer` and the browser game through GitHub Pages at `https://niposch.de/parking-trainer/`; inherit the existing user-site domain without DNS changes. Make the game discoverable from the homepage’s centralized Live projects directory.

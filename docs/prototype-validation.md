@@ -72,3 +72,9 @@ The user reported that other Steam Controller inputs worked but L2/R2 did not. T
 - Experimental browser release passed **49 runtime checks** inside an 844×390 viewport, including the same touch/collapse/viewport checks. UI inspection verified Options → On, the overlay and tapping the hint header. These injected pointer checks and resized viewports are not physical mobile hardware testing. A browser-automation MutationObserver error was present before the game checks, with no game source URL; it did not prevent completion. Physical phone/tablet, regular gamepad and external-browser fullscreen/pointer-lock checks remain pending.
 
 See `screenshots/touch-portrait.png`, `touch-landscape.png`, `options-portrait.png` and `window-fill.png`. Earlier browser frame-rate measurements above used the old scaled viewport and are historical, not measurements of this update.
+
+## Compact hint and Pages publication — 18 October 2026
+
+The collapsed hint is now a single 44×44 px `?` button; its entire phase panel is hidden. Touch mode reuses the toolbar’s `?` and does not add another collapsed panel. Expanded instructions and T/X shortcuts remain. Native captures `hint-icon.png` and `hint-icon-touch.png` verify the freed space. Windows build passed with zero warnings/errors; **120 headless checks** passed, including icon bounds and hidden panel state.
+
+The Pages export enables Godot’s PWA isolation worker with relative URLs. On a fresh localhost port serving a subdirectory without COOP/COEP response headers, the shell installed the worker, reloaded into an isolated context and passed **50 actual browser runtime checks**, with no console errors. This exercises static hosting rather than relying on the development server’s headers. Public deployment is through the new source repository and a Windows-build / Pages-deploy Actions workflow; see [deployment maintenance](deployment.md).
