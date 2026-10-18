@@ -8,7 +8,7 @@ Only free assets are used. No purchases, premium packs, copied game assets, logo
 - Acquired: 18 October 2026 from the provider's free ZIP download.
 - Licence: CC0; original notice retained in `kenney/LICENSE.txt`.
 - Included models: sedan, SUV, van, sports hatchback; shared colormap texture.
-- Modifications happen at runtime: player windows opened by removing glass faces; existing A-pillar/window borders narrowed; existing wheels repositioned to a 2.65 m wheelbase and 1.52 m track and kept circular; body scaled to the generic profile; simple seats, dashboard, steering wheel, and mirror housings added from primitives. No full custom car was modelled.
+- Runtime modifications adapt one continuous sedan body into a generic liftback: upper cabin widened, rear hatch extended, a rear side-window aperture added, glazing separated for exterior rendering, and dark inner surfaces/window reveals added. The original painted body, lights, wheel arches and roof remain connected. The original toy mirrors are replaced by functioning mirrors. Body/arch positions match the 4.45 m profile and 2.65 m axles; wheels remain circular on a 1.52 m track. Simple seats, interior door cards, dashboard and steering wheel use primitives. No second exterior shell or purchased vehicle model is used.
 - Parked vehicles are dimensioned variants of the reused meshes. Their wheelbases and landmark positions are approximate; they are not vehicle replicas.
 
 The original licence identifies the asset creator; it is kept as repository documentation and is not displayed as in-game branding.

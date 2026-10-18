@@ -148,6 +148,14 @@ Use C# for the simulation, generator, and tutor; keep their logic separate from 
 - Prototype cues can teach spatial principles immediately; do not describe an uncalibrated generic car as an exact replica of the lesson car.
 - Browser support, the user-supplied [C# web-export fork](https://github.com/sethyanow/godot-dotnet-web-export), and native Steam Input API integration are deferred. No further web-port work is required for the Windows prototype.
 
+## Visibility and sensor feedback - 18 October 2026
+
+- Exterior reference is only a similar liftback body shape, not confirmation of the lesson-car make/model. Keep the unbranded 4.45 by 1.80 m generic physics profile until actual calibration is available.
+- Adapt one coherent free vehicle body; no mismatched upper/lower shells, interior panels protruding outside, unexplained body gaps or duplicate mirrors. Keep A/B/C pillars substantial and opaque.
+- Include separate front seats/headrests, a rear bench with three head restraints, usable passenger-side and rear-quarter windows, and a rear hatch window. Rotate and smoothly translate the eye inboard/backward for a full rear look.
+- Interior and exterior must use the same window/body geometry. Interior trim and glazing must not obstruct the wheel, digital instruments or low console screen.
+- For the requested prototype sensor profile, exclude low sidewalks/curbs from beepers and indicators while preserving their collision geometry.
+
 ## Sources
 
 Sources accessed 18 October 2026. Manufacturer manuals describe example equipment, not confirmed specifications of the learner's car. Asset listing claims are not import or dimensional validation.

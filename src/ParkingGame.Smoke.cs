@@ -21,6 +21,26 @@ public partial class ParkingGame
             await PhysicsFrames(4);
             Check(Paused && Car.Gear==Gear.P && Car.ParkingBrake,"Starts paused in P with parking brake applied");
             Check(mirrorScreens.All(m=>m.GetParent()==vehicle),"Mirrors are physically mounted on the car");
+            var body=WorldFactory.Meshes(vehicle).Single(m=>m.Name=="body");
+            var bodyBounds=vehicle.GlobalTransform.AffineInverse()*body.GlobalTransform*body.GetAabb();
+            Check(Math.Abs(bodyBounds.Size.X-(float)CarSpec.Width)<.01 && Math.Abs(bodyBounds.Size.Z-(float)CarSpec.Length)<.01,"Single adapted exterior matches physical body width and length");
+            Check(!WorldFactory.Meshes(vehicle).Any(m=>m.Name=="CabinShell"),"No overlapping replacement exterior shell");
+            var forwardEye=PlayerCabin.EyeTarget(0,EyeHeight);var sideEye=PlayerCabin.EyeTarget(-Mathf.Pi/2,EyeHeight);var backEye=PlayerCabin.EyeTarget(-Mathf.Pi,EyeHeight);
+            Check(forwardEye==sideEye && backEye.X>forwardEye.X+.30 && backEye.Z>forwardEye.Z+.15,"Rearward torso lean moves eye inboard and back without shifting the normal side view");
+            Check(body.Mesh is ArrayMesh lining && lining.GetSurfaceCount()==2 && body.GetChildCount()==1,"One continuous painted body has an interior lining and exterior-only glass");
+            var triangles=body.Mesh.GetFaces();
+            bool BodyBlocks(Vector3 from,Vector3 to)
+            {
+                from=body.ToLocal(vehicle.ToGlobal(from));to=body.ToLocal(vehicle.ToGlobal(to));
+                for(int i=0;i<triangles.Length;i+=3)
+                    if(Geometry3D.SegmentIntersectsTriangle(from,to,triangles[i],triangles[i+1],triangles[i+2]).VariantType!=Variant.Type.Nil) return true;
+                return false;
+            }
+            Check(!BodyBlocks(forwardEye,new(-.36f,EyeHeight,-5)),"Forward sightline passes through the windshield");
+            Check(!BodyBlocks(sideEye,new(3,EyeHeight,-1.25f)),"90-degree passenger-side sightline passes through the side window");
+            Check(!BodyBlocks(backEye,new(backEye.X,backEye.Y,3)),"Leaned rear sightline passes through the rear glass");
+            Check(BodyBlocks(forwardEye,new(0,2,-1)),"Roof remains a solid occluder");
+            Check(BodyBlocks(forwardEye,forwardEye+(new Vector3(.90f,1.15f,-.96f)-forwardEye)*2),"Broad B pillar remains a solid occluder");
             Check(gearLabel.GetViewport()!=GetViewport() && rearRect.GetViewport()!=GetViewport(),"Instruments and parking feed render on cockpit screens");
             sensorGraphic.SetRanges(new[]{2.0,.25,.8},new[]{.5,1.2,2.0});
             Check(Enumerable.Range(0,6).Select(sensorGraphic.Level).SequenceEqual(new[]{0,4,2,3,1,0}),"Each front/rear sensor has independent stepped visual proximity");

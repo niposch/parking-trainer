@@ -37,7 +37,7 @@ public static class WorldFactory
             source.Position+=new Vector3(0,0,(float)CarSpec.CentreZ);
             foreach(var mesh in Meshes(source))
             {
-                mesh.Layers=2;
+                mesh.Layers=32; // wheels/glass are exterior-only; AdaptBody exposes the lined body to the driver
                 if(mesh.Name.ToString().Contains("wheel"))
                 {
                     bool front=mesh.Name.ToString().Contains("front");
@@ -51,18 +51,9 @@ public static class WorldFactory
                     mesh.SetMeta("steering_wheel",front);
                     mesh.SetMeta("base_rotation",mesh.Rotation);
                 }
-                else if(mesh.Name=="body") OpenWindows(mesh);
+                else if(mesh.Name=="body") PlayerCabin.AdaptBody(mesh,root);
             }
-            // Minimal cabin infill only; the exterior/pillars/wheels remain the CC0 asset.
-            Color dark=new("333b3e");
-            foreach(float x in new[]{-.43f,.43f})
-            foreach(float z in new[]{-.5f,-1.15f})
-            {
-                Box(root,new(x,.48f,z),new(.46f,.15f,.48f),dark).Layers=2;
-                Box(root,new(x,.77f,z+.20f),new(.46f,.55f,.11f),dark).Layers=2;
-                Box(root,new(x,1.09f,z+.20f),new(.26f,.20f,.12f),dark).Layers=2;
-            }
-            Box(root,new(0,.70f,-2.14f),new(1.65f,.12f,.36f),dark).Layers=2;
+            PlayerCabin.Build(root);
             // A neutral wheel communicates accumulated steering position in first person.
             var wheel=new MeshInstance3D { Name="DriverWheel",Mesh=new TorusMesh { InnerRadius=.16f,OuterRadius=.19f,Rings=20,RingSegments=10 },
                 MaterialOverride=Material(new("20282c")),Position=new(-.38f,.80f,-1.95f),Rotation=new(Mathf.Pi/2-.25f,0,0),Layers=2 };
@@ -76,50 +67,6 @@ public static class WorldFactory
     {
         if(node is MeshInstance3D mesh) yield return mesh;
         foreach(Node child in node.GetChildren()) foreach(var m in Meshes(child)) yield return m;
-    }
-    static void OpenWindows(MeshInstance3D node)
-    {
-        // Remove only the pale-blue upper window triangles from the atlas-based body.
-        // This small adaptation preserves the model's existing window frames/pillars.
-        if(node.Mesh is not ArrayMesh original) return;
-        var edited=new ArrayMesh(); int removed=0;
-        for(int surface=0;surface<original.GetSurfaceCount();surface++)
-        {
-            var arrays=original.SurfaceGetArrays(surface);
-            var vertices=arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
-            var uv=arrays[(int)Mesh.ArrayType.TexUV].AsVector2Array();
-            var indices=arrays[(int)Mesh.ArrayType.Index].AsInt32Array();
-            var material=original.SurfaceGetMaterial(surface) as StandardMaterial3D;
-            var texture=material?.AlbedoTexture?.GetImage();
-            var keep=new List<int>();
-            for(int i=0;i<indices.Length;i+=3)
-            {
-                bool glass=false;
-                if(texture!=null)
-                {
-                    var centre=(uv[indices[i]]+uv[indices[i+1]]+uv[indices[i+2]])/3;
-                    var c=texture.GetPixel(Math.Clamp((int)(centre.X*texture.GetWidth()),0,texture.GetWidth()-1),Math.Clamp((int)(centre.Y*texture.GetHeight()),0,texture.GetHeight()-1));
-                    float low=Math.Min(vertices[indices[i]].Y,Math.Min(vertices[indices[i+1]].Y,vertices[indices[i+2]].Y));
-                    glass=low>.44f && c.B>c.R*1.04f && c.G>.64f && c.R>.48f;
-                }
-                if(glass) removed++; else { keep.Add(indices[i]);keep.Add(indices[i+1]);keep.Add(indices[i+2]); }
-            }
-            // Thin the toy asset's oversized A-pillars by moving its existing aperture
-            // borders together. No new exterior is modelled; cabin dimensions stay fixed.
-            for(int i=0;i<vertices.Length;i++)
-            {
-                var p=vertices[i];float ax=Math.Abs(p.X);
-                if(Math.Abs(ax-.3644f)<.001f || Math.Abs(ax-.4488f)<.001f) p.X+=Math.Sign(p.X)*.065f;
-                if(ax>.46f && ax<.56f && (Math.Abs(p.Z-.1263f)<.001f || Math.Abs(p.Z-.4479f)<.001f || Math.Abs(p.Z-.3479f)<.001f)) p.Z+=.09f;
-                vertices[i]=p;
-            }
-            arrays[(int)Mesh.ArrayType.Vertex]=vertices;
-            arrays[(int)Mesh.ArrayType.Index]=keep.ToArray();
-            edited.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles,arrays);
-            edited.SurfaceSetMaterial(surface,material);
-        }
-        node.Mesh=edited;
-        GD.Print($"Player windows: removed {removed} glass triangles; reused original body and pillars.");
     }
     public static void BuildLot(Node3D root,Scenario scene)
     {

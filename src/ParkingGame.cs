@@ -71,6 +71,7 @@ public partial class ParkingGame : Node3D
         Gas=0;Brake=0;
         Elapsed=0;successTime=0;Demo=false;Inspection=false;inspectionAcknowledged=false;demoStep=1;demoCarry=0;LookYaw=0;LookPitch=0;
         Notice=""; Paused=true;UpdateMouseCapture();
+        eye.Position=PlayerCabin.EyeTarget(0,EyeHeight);
         if(autoCapture)
         {
             Paused=captureView is "menu" or "input"; Car.Gear=Gear.R;
@@ -81,6 +82,10 @@ public partial class ParkingGame : Node3D
             if(captureView=="inspection") {Car.Pose=Scene.Goal;Car.Gear=Gear.P;BeginInspection();}
             if(captureView=="left-mirror") { LookYaw=1.05f;LookPitch=-.10f; }
             if(captureView=="shoulder") { LookYaw=-2.25f; LookPitch=-.12f; }
+            if(captureView=="right-90") {LookYaw=-Mathf.Pi/2;LookPitch=0;Tutor=false;}
+            if(captureView=="right-rear") {LookYaw=-Mathf.Pi*.75f;LookPitch=0;Tutor=false;}
+            if(captureView=="back") {LookYaw=-Mathf.Pi;LookPitch=0;Tutor=false;}
+            if(captureView.StartsWith("asset")) {Car.Pose=new(8,8,0);Tutor=false;}
             Car.Steer=-.4;
         }
         ApplyPose(); UpdateMenu(); UpdateViews();

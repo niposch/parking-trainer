@@ -121,7 +121,7 @@ public sealed class DrivingModel
         {
             double angle=Pose.Yaw+(front?0:System.Math.PI)+sector*(front?-.35:.35)+i*.105;
             foreach(var o in obstacles)
-                nearest=System.Math.Min(nearest,o.Shape.RayDistance(origin.X,origin.Z,-System.Math.Sin(angle),-System.Math.Cos(angle),range));
+                if(!o.Curb) nearest=System.Math.Min(nearest,o.Shape.RayDistance(origin.X,origin.Z,-System.Math.Sin(angle),-System.Math.Cos(angle),range));
         }
         return nearest;
     }

@@ -48,6 +48,10 @@ Check(sectorCar.Sensor(frontLeft,true,-1)<1.3,"Front left sensor fans outward to
 Check(sectorCar.Sensor(frontLeft,true,1)==2,"Front right sensor does not report an obstacle on the opposite side");
 Check(sectorCar.Sensor(rearLeft,false,-1)<1.3,"Rear left sensor fans outward toward rear-left obstacle");
 Check(sectorCar.Sensor(rearLeft,false,1)==2,"Rear right sensor does not report an obstacle on the opposite side");
+var curb=new Obstacle(new(0,1.10,1.8,.20,0),"curb",.15,true);
+Check(sectorCar.Sensor(new[]{curb},false,0)==2,"Low sidewalk does not appear on parking sensors");
+Check(sectorCar.Sensor(new[]{curb,obstacle},true,0)==sectorCar.Sensor(new[]{obstacle},true,0),"Ignoring sidewalks preserves normal car detection");
+Check(DrivingModel.Collides(new Pose(0,.15,0),new[]{curb}),"Sidewalk remains a physical collision obstacle");
 car.Move(1,new[]{obstacle});
 Check(car.Contacts==1 && !DrivingModel.Collides(car.Pose,new[]{obstacle}),"Swept collision stops without tunnelling");
 Check(new Footprint(0,0,2,4,.4).Overlaps(new(0,0,2,4,-.3)),"Rotated SAT overlap");

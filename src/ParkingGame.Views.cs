@@ -12,7 +12,7 @@ public partial class ParkingGame
     Label3D landmark=null!;
     internal ShaderMaterial surroundMaterial=null!;
     internal static ShaderMaterial FlipImage()=>new() { Shader=new Shader {Code="shader_type canvas_item; void fragment(){ COLOR=texture(TEXTURE,vec2(1.0-UV.x,UV.y)); }"} };
-    SubViewport View(int width,int height,out Camera3D camera,uint layers=3)
+    SubViewport View(int width,int height,out Camera3D camera,uint layers=35)
     {
         var viewport=new SubViewport { Size=new(width,height),World3D=GetViewport().World3D,
             RenderTargetUpdateMode=SubViewport.UpdateMode.Always,Msaa3D=Viewport.Msaa.Msaa2X };
@@ -23,11 +23,11 @@ public partial class ParkingGame
     void SetupViews()
     {
         eye=new Camera3D {Current=true,Near=.035f,Far=75,Fov=Fov,CullMask=27};vehicle.AddChild(eye);
-        inspectionCamera=new Camera3D {Near=.08f,Far=75,Fov=60,CullMask=11};vehicle.AddChild(inspectionCamera);
-        rearViewport=View(720,420,out rearCamera,7);rearCamera.KeepAspect=Camera3D.KeepAspectEnum.Width;rearCamera.Fov=112;
+        inspectionCamera=new Camera3D {Near=.08f,Far=75,Fov=60,CullMask=43};vehicle.AddChild(inspectionCamera);
+        rearViewport=View(720,420,out rearCamera,39);rearCamera.KeepAspect=Camera3D.KeepAspectEnum.Width;rearCamera.Fov=112;
         for(int i=0;i<3;i++) {mirrorViewports[i]=View(i==1?420:360,i==1?170:210,out mirrorCameras[i]);}
         for(int i=0;i<4;i++) {surroundSources[i]=View(380,380,out surroundCameras[i]);surroundCameras[i].Fov=150;}
-        mapViewport=View(700,580,out mapCamera,3);mapCamera.Projection=Camera3D.ProjectionType.Orthogonal;mapCamera.Size=25;
+        mapViewport=View(700,580,out mapCamera,35);mapCamera.Projection=Camera3D.ProjectionType.Orthogonal;mapCamera.Size=25;
         mapCamera.Position=new(1,28,0);mapCamera.RotationDegrees=new(-90,0,0);
         // Ground-plane reconstruction from four finite, vehicle-mounted cameras.
         // Raised objects stretch and coverage gaps remain dark, as in a camera composite.
@@ -68,15 +68,22 @@ void fragment(){
     }
     void UpdateViews()
     {
-        eye.Position=new(-.36f,EyeHeight,-1.25f);eye.Rotation=new(LookPitch,LookYaw,0);eye.Fov=Fov;
+        var eyeTarget=PlayerCabin.EyeTarget(LookYaw,EyeHeight);
+        eye.Position=eye.Position.Lerp(eyeTarget,1-Mathf.Exp(-(float)GetPhysicsProcessDeltaTime()*10));
+        eye.Rotation=new(LookPitch,LookYaw,0);eye.Fov=Fov;
         UpdateInspectionCamera();
-        if(autoCapture && captureView=="asset") {eye.GlobalPosition=vehicle.ToGlobal(new(-4,2.5f,-6));eye.LookAt(vehicle.ToGlobal(new(0,.8f,-1.325f)));}
+        if(autoCapture && captureView.StartsWith("asset"))
+        {
+            eye.CullMask=43;eye.Fov=60;
+            var position=captureView switch {"asset-side"=>new Vector3(5,1.65f,-1.325f),"asset-rear"=>new Vector3(-4,2.5f,4),_=>new Vector3(-4,2.5f,-6)};
+            eye.GlobalPosition=vehicle.ToGlobal(position);eye.LookAt(vehicle.ToGlobal(new(0,.8f,-1.325f)));
+        }
         rearCamera.GlobalTransform=vehicle.GlobalTransform*new Transform3D(Basis.FromEuler(new(-.45f,Mathf.Pi,0)),new(.04f,1.10f,.72f));
         // Planar virtual-eye mirrors: reflect the eye about each mirror plane, then
         // use off-axis frusta. Side mirrors get a modest convex FOV approximation.
         for(int i=0;i<3;i++)
         {
-            var centre=mirrorCentres[i];var toEye=(eye.Position-centre).Normalized();
+            var centre=mirrorCentres[i];var toEye=(PlayerCabin.EyeTarget(0,EyeHeight)-centre).Normalized();
             var rearward=new Vector3(i==0?-.26f:i==2?.26f:0,0,1).Normalized();
             var normal=(toEye+rearward).Normalized();
             if(mirrorScreens[i]!=null) mirrorScreens[i].LookAt(vehicle.ToGlobal(centre+normal),vehicle.GlobalBasis.Y,true);
