@@ -10,6 +10,8 @@ For Steam Input, add `builds/ParkingPractice/ParkingPractice.exe` as a non-Steam
 
 See [controls and playing notes](docs/playing.md).
 
+Scenarios start in P with the parking brake on. Hold L2/S, select R/D, then release the parking brake with right-stick click/Space. Mouse look is captured while driving; Escape releases it. The pause menu includes a live pedal input test and rebinding. Steam keyboard/mouse layouts also support left-click gas/right-click brake as digital fallbacks; use a Gamepad layout for analog triggers.
+
 ## Included
 
 - First-person cockpit, head look and shoulder view; no chase camera.

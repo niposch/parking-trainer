@@ -2,7 +2,9 @@
 
 Run `ParkingPractice.exe` from the runtime bundle, or `Launch.cmd` from the source repository. All driving is **first person**.
 
-Choose the exercise and select **Drive / Resume**. It selects R for reverse exercises and D for forward bay parking, and releases the parking brake. With no brake input, the car will creep. Hold the brake before changing gear. Park only after stopping: select P, then apply the parking brake.
+Choose the exercise and select **Drive / Resume**. Every scenario starts in **P with the parking brake applied**. Hold L2/S, select R or D, then explicitly release the parking brake with right-stick click/Space. Release the service brake gently to creep. Resuming does not change gear or release the parking brake. Park only after stopping: select P, then apply the parking brake.
+
+The mouse is captured while driving and moves the driver's head. Escape pauses and releases it for menus; losing application focus also pauses. Starting a new scenario releases the mouse until you choose Drive again.
 
 | Action | Controller / Steam Input gamepad layout | Keyboard |
 |---|---|---|
@@ -10,6 +12,7 @@ Choose the exercise and select **Drive / Resume**. It selects R for reverse exer
 | Service brake, in either direction | Left trigger, analog | S |
 | Turn steering wheel | Left stick | A / D |
 | Look around | Right stick | Arrow keys |
+| Look around with mouse | Steam mouse/trackpad output | Move mouse |
 | Select R / D while stopped and braked | Left / right shoulder | 2 / 4 |
 | Cycle P → R → N → D while stopped and braked | Bottom face button (A mapping) | 1 P / 2 R / 3 N / 4 D |
 | Parking brake | Right-stick click | Space |
@@ -35,6 +38,8 @@ The yellow camera lines represent approximately body width plus 2 cm per side. C
 
 The prototype permits pull-forward corrections. A green target outline marks the desired body footprint. The tutor shows goal offset, heading error, and contact events; no timer or traffic pressure is involved.
 
-Steam must launch the executable for its per-game controller layout to apply. Use a gamepad layout that keeps both triggers analog. No native Steamworks API or Steam store release is required. Physical controller/Steam overlay behavior has not yet been verified on this machine.
+Steam must launch the executable for its per-game controller layout to apply. For **analog pedals**, select a **Gamepad** layout and keep L2/LT and R2/RT analog output enabled as their respective triggers. A keyboard/mouse layout can make other controls work while the game reports no gamepad. That layout now also works with **left mouse button = gas, right mouse button = brake**, but these pedals are on/off rather than analog.
+
+Scroll down in the pause menu for the **Input test**: slowly press each trigger and check that its percentage varies smoothly. The menu shows detected gamepads and the last received button/axis/key. **Bind L2 brake / Bind R2 gas** allow an alternate axis, button, key or mouse button; press the desired input fully, or Escape to cancel. Bindings persist, and **Reset pedals** restores defaults. Analog trigger events are accepted from any gamepad, including Steam's virtual gamepad. No native Steamworks API or Steam store release is required. The physical Steam Controller/layout still needs a repeat test on the user's setup.
 
 This uses a generic 4.45 m × 1.80 m car with a 2.65 m wheelbase. Exact seat position, mirrors, wide-angle lens distortion, and lesson-car reference cues remain uncalibrated. This first version is for feedback on controls and parking practice, not a claim of exact real-car sightline matching.

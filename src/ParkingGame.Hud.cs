@@ -80,6 +80,11 @@ public partial class ParkingGame
         muteButton=Button(mv,"",()=>{Muted=!Muted;UpdateMenu();SaveSettings();});
         Button(mv,"Teaching map · pause to inspect",()=>{mapRect.Visible=!mapRect.Visible;}).TooltipText=Tr("An overhead teaching aid, not the car's surround camera.");
         deviceLabel=Text(mv,"",13);deviceLabel.AutowrapMode=TextServer.AutowrapMode.WordSmart;
+        pedalStatus=Text(mv,"",15);
+        var pedalRow=new HBoxContainer();mv.AddChild(pedalRow);
+        Button(pedalRow,"Bind L2 brake",()=>BeginPedalBinding(BrakeAction));
+        Button(pedalRow,"Bind R2 gas",()=>BeginPedalBinding(GasAction));
+        Button(pedalRow,"Reset pedals",ResetPedalBindings);
         var help=Text(mv,"RT gas · LT brake · left stick turn · right stick look\nLB R · RB D · A gear · Y display · X tutor · B console\nD-pad: left/right mirrors · down shoulder · up forward\nKeyboard: W/S pedals · A/D steer · arrows look\n1 P · 2 R · 3 N · 4 D · Space parking brake\nZ centre wheel · C shoulder · V console · Home forward\nTab display · T tutor · Esc pause · F5 retry · F6 new",13);help.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         Text(mv,"Prototype 01 · generic car · uncalibrated sightlines",12,new("66756b"));
         mapRect=Image(hud,mapViewport);mapRect.Position=new(1045,270);mapRect.Size=new(365,350);mapRect.Visible=false;
@@ -107,12 +112,12 @@ public partial class ParkingGame
     {
         if(!IsInstanceValid(menu)) return;
         menu.Visible=Paused;
-        menuSummary.Text=string.Format(Tr("{0} · variation {1}\nHold the brake to select a gear. Release it gently to creep."),ExerciseName(),Seed);
+        menuSummary.Text=string.Format(Tr("{0} · variation {1}\nStarts in P with parking brake ON. Hold the brake, select R/D, then release the parking brake."),ExerciseName(),Seed);
         tutorButton.Text=Tutor?Tr("Tutor: on"):Tr("Tutor: off");
         guideButton.Text=DynamicGuides?Tr("Rear guides: follow steering"):Tr("Rear guides: fixed");
         steeringButton.Text=RateSteering?Tr("Steering: turn & hold (stick release holds angle)"):Tr("Steering: stick angle (returns to centre)");
         muteButton.Text=Muted?Tr("Parking beepers: muted"):Tr("Parking beepers: on");
-        deviceLabel.Text=selectedController>=0?Tr("Controller connected · use a Steam Input gamepad layout."):Tr("No controller detected. Keyboard controls are available.");
+        UpdateDeviceStatus();
         if(Paused) resumeButton.GrabFocus();
     }
     void UpdateHud()
@@ -150,5 +155,6 @@ public partial class ParkingGame
         }
         metricsLabel.Text=string.Format(Tr("Goal offset {0:0.00} m · angle {1:0}° · contacts {2}"),Scene.PositionError(Car.Pose),DrivingModel.AngleError(Car.Pose.Yaw,Scene.Goal.Yaw)*180/Math.PI,Car.Contacts);
         menu.Visible=Paused;
+        if(Paused) UpdateDeviceStatus();
     }
 }

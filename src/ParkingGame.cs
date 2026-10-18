@@ -39,7 +39,7 @@ public partial class ParkingGame : Node3D
         AddChild(new DirectionalLight3D { RotationDegrees=new(-52,-35,0),LightColor=new("fff4de"),LightEnergy=.70f,ShadowEnabled=true,DirectionalShadowMaxDistance=55 });
         vehicle=new Node3D { Name="PlayerVehicle" }; AddChild(vehicle);
         WorldFactory.Car(vehicle,"sedan",CarSpec.Width,CarSpec.Length,1.50,true);
-        LoadSettings();SetupViews(); SetupHud();
+        SetupPedalActions();LoadSettings();SetupViews(); SetupHud();
         beep=new AudioStreamPlayer(); AddChild(beep);
         Input.JoyConnectionChanged+=ControllerChanged;
         foreach(int device in Input.GetConnectedJoypads()) {selectedController=device;break;}
@@ -52,6 +52,7 @@ public partial class ParkingGame : Node3D
     {
         if(!connected && device==selectedController) {selectedController=-1;Pause(true);Message("Controller disconnected. Reconnect and resume.");}
         else if(connected && selectedController<0) selectedController=(int)device;
+        UpdateDeviceStatus();
     }
     public override void _Notification(int what)
     {
@@ -63,12 +64,13 @@ public partial class ParkingGame : Node3D
         Scene=Scenario.Create(Exercise,Seed);
         if(lot!=null) {RemoveChild(lot);lot.QueueFree();}
         lot=new Node3D { Name="PracticeLot" };AddChild(lot);WorldFactory.BuildLot(lot,Scene);
-        Car=new DrivingModel {Pose=Scene.Spawn};
+        Car=new DrivingModel {Pose=Scene.Spawn,Gear=Gear.P,ParkingBrake=true};
+        Gas=0;Brake=0;
         Elapsed=0;successTime=0;Demo=false;demoStep=1;demoCarry=0;LookYaw=0;LookPitch=0;
-        Notice=""; Paused=true;
+        Notice=""; Paused=true;UpdateMouseCapture();
         if(autoCapture)
         {
-            Paused=captureView=="menu"; Car.Gear=Gear.R;
+            Paused=captureView is "menu" or "input"; Car.Gear=Gear.R;
             if(captureView=="reverse") CameraMode=0;
             if(captureView=="surround") { CameraMode=1; LookYaw=-.62f;LookPitch=-.40f; }
             if(captureView=="console") { CameraMode=0;LookYaw=-.62f;LookPitch=-.40f; }
@@ -83,8 +85,8 @@ public partial class ParkingGame : Node3D
     {
         if(Paused==pause) return;
         Paused=pause; Gas=0; Brake=1; Car.Speed=0; Demo=false;
+        UpdateMouseCapture();
         if(IsInstanceValid(menu)) {menu.Visible=pause;if(pause) resumeButton.GrabFocus();}
-        if(!pause && Car.Gear==Gear.P) {Car.Gear=Scene.Exercise==Exercise.ForwardBay?Gear.D:Gear.R;Car.ParkingBrake=false;}
         SaveSettings();
     }
     void Message(string message) {Notice=message;noticeTime=4;}
@@ -115,6 +117,7 @@ public partial class ParkingGame : Node3D
     }
     void Shift(Gear gear)
     {
+        ReadPedals();
         if(!Car.Select(gear,Brake)) Message("Stop and hold the brake to change gear.");
         else Message(string.Format(Tr("Selected {0}"),gear));
     }
@@ -130,8 +133,7 @@ public partial class ParkingGame : Node3D
             if(Demo) RunDemo(delta);
             else
             {
-                Gas=Math.Clamp(Math.Max(Axis(JoyAxis.TriggerRight),Input.IsPhysicalKeyPressed(Key.W)?1:0),0,1);
-                Brake=Math.Clamp(Math.Max(Axis(JoyAxis.TriggerLeft),Input.IsPhysicalKeyPressed(Key.S)?1:0),0,1);
+                ReadPedals();
                 double steerInput=-Dead(Axis(JoyAxis.LeftX))+(Input.IsPhysicalKeyPressed(Key.A)?1:0)-(Input.IsPhysicalKeyPressed(Key.D)?1:0);
                 steerInput=Math.Clamp(steerInput,-1,1);
                 if(RateSteering) Car.Steer=Math.Clamp(Car.Steer+steerInput*1.0*SteeringSensitivity*delta,-CarSpec.MaxSteer,CarSpec.MaxSteer);
@@ -174,6 +176,7 @@ public partial class ParkingGame : Node3D
     {
         Car=new DrivingModel{Pose=Scene.Spawn,Gear=Scene.Exercise==Exercise.ForwardBay?Gear.D:Gear.R,ParkingBrake=false};
         demoStep=1;demoCarry=0;Demo=true;Paused=false;Tutor=true;menu.Hide();
+        UpdateMouseCapture();
     }
     void RunDemo(double dt)
     {
@@ -213,6 +216,7 @@ public partial class ParkingGame : Node3D
     public override async void _Process(double delta)
     {
         frames++;
+        if(autoCapture && captureView=="input") menu.GetChild<ScrollContainer>(0).ScrollVertical=10000;
         if(autoCapture && !captureTaken && frames>=100 && Time.GetTicksMsec()-captureStarted>2500)
         {
             captureTaken=true;
@@ -226,7 +230,9 @@ public partial class ParkingGame : Node3D
         if(autoCapture||smokeMode) return;
         var cfg=new ConfigFile();cfg.SetValue("view","layout_version",2);cfg.SetValue("view","eye_height",EyeHeight);cfg.SetValue("view","fov",Fov);
         cfg.SetValue("input","rate_steering",RateSteering);cfg.SetValue("input","deadzone",Deadzone);
-        cfg.SetValue("preferences","tutor",Tutor);cfg.SetValue("preferences","muted",Muted);cfg.Save("user://settings.cfg");
+        cfg.SetValue("preferences","tutor",Tutor);cfg.SetValue("preferences","muted",Muted);
+        SavePedalBindings(cfg);
+        cfg.Save("user://settings.cfg");
     }
     void LoadSettings()
     {
@@ -236,5 +242,6 @@ public partial class ParkingGame : Node3D
         EyeHeight=(float)cfg.GetValue("view","eye_height",1.20f);Fov=(float)cfg.GetValue("view","fov",76f);
         RateSteering=(bool)cfg.GetValue("input","rate_steering",true);Deadzone=(float)cfg.GetValue("input","deadzone",.10f);
         Tutor=(bool)cfg.GetValue("preferences","tutor",true);Muted=(bool)cfg.GetValue("preferences","muted",false);
+        LoadPedalBindings(cfg);
     }
 }
