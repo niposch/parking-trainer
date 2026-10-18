@@ -1,6 +1,6 @@
 # Parking Trainer: requirements and research
 
-**Date:** 18 October 2026. **Status:** investigation only; no game implementation.
+**Date:** 18 October 2026. **Status:** requirements baseline; first-prototype results and limits are recorded in [prototype validation](prototype-validation.md).
 
 “Must” describes the intended Windows prototype. Numerical targets below are proposed engineering criteria, not measured properties of the learner's car or driving-test rules.
 
@@ -12,6 +12,7 @@
 - English initially; prepare all text for later translation, including German.
 - Optional visual tutor explaining the manoeuvre and showing what to look at and align.
 - Blocky, flat-colored cars are acceptable, as in the user's second reference image. Reuse assets; avoid substantial custom vehicle modelling.
+- Free assets only; no paid packs. All driving must be first person. Mount mirrors, the camera screen, and a minimal digital speed/gear/parking-brake display physically in the cockpit. Keep the forward view clear, with instruments behind a realistically sized wheel and the camera in the center console. The optional tutor can remain an overlay.
 - No existing vehicle brands, logos, model names, branded scenery, or copied infotainment artwork in the game. Use generic controller symbols. Steam Input remains the requested external integration.
 
 **Owner-provided facts:** lessons are in German; the learning car is a SEAT a few years old, with a reversing camera, 360° camera, and front/rear distance beepers. Exact model, transmission variant, controller, and guide-line behavior are unknown. Real manufacturer names in this document identify research sources only.
@@ -33,18 +34,16 @@ The user's reversing-camera image establishes the visual direction: wide rear vi
 
 ## 3. Asset recommendation: reuse first
 
-Provider listings were reviewed; packages have **not** been purchased, downloaded, imported, or dimensionally verified. Prices are listed in USD as observed on the research date, before applicable tax.
+Initial listings were reviewed during research. The prototype now uses four free CC0 Kenney models; see [asset provenance](../assets/THIRD_PARTY.md). Other candidates remain unimported. Paid assets are excluded by the owner's instruction.
 
 | Candidate | Verified listing information | Recommended use / limitation |
 |---|---|---|
 | [Cosmo: Low Poly Cars][cosmo] | 12 free models under CC0; OBJ, FBX, GLTF. Additional paid content exists. | First free pack to evaluate for the simple visual style and parked-car variations. Interior suitability is unverified. |
 | [Kenney: Car Kit][kenneycars] | Free CC0, 45 files. | Alternative parked-car pack. Do not assume its windows or cockpit support a driver-eye camera. |
 | [Quaternius: Cars Pack][quaternius] | Eight car models; CC0; FBX, OBJ, Blend. | Another free source of varied parked cars; cabin and scale need checking. |
-| [ZeroGrid: Cars Pack with Interior – Low Poly][interiorpack] | $29; nine models; FBX included; listing permits modification and use in finished products. | Strong candidate if free packs require major cabin work. Listing contradicts itself about rigging, so inspect separate wheels/steering parts before relying on them. |
-| [3D Disco: Generic Compact Car With Interior][compact] | $20 standard / $40 extended listing options; interior; GLB and Blend among formats. | Single-car fallback if a pack's cockpit is unsuitable. Check the chosen licence's project limits and inspect for branding. |
 | [Kenney: City Kit (Roads)][roads] | Free CC0, 90 files. | Optional curb/road props. Generate dimensioned bay lines and ground directly; no need for a city kit to dictate parking dimensions. |
 
-**Selection rule:** try one free pack first. Keep a suitable simple car and make only small edits: remove badges, set dimensions, separate existing wheel parts, fix glass/materials, add landmark anchors, or make a minor pillar/light adjustment. If a usable cabin requires building a new interior or extensively reshaping the car, switch assets. A small interior-equipped purchase is preferable to a large modelling effort; no purchase is authorized or required by this research task.
+**Selection rule:** use free assets with small edits: remove badges, set dimensions, separate existing wheel parts, fix glass/materials, add landmark anchors, or make a minor pillar/light adjustment. If extensive reshaping is required, switch to another free asset. The prototype reuses the Kenney exterior with a small primitive cabin and physical instrument/display mounts.
 
 The player car must have usable window openings, A/B/C pillars, mirrors, recognizable rear lamps, bumpers, wheels, and a basic interior. Parked cars need credible dimensions and landmarks; they need no elaborate interiors. Avoid global scaling as a substitute for checking wheelbase, overhangs, and pillar positions individually.
 
@@ -144,7 +143,7 @@ Use C# for the simulation, generator, and tutor; keep their logic separate from 
 
 - Exact learning-car model/year, seating/mirror setup, steering/turning circle, camera mode, and Auto Hold use: useful for later calibration; not required to write this specification or begin a generic prototype.
 - Actual controller and preferred stick-steering mode: establish during the first input trial.
-- Free-pack player-car suitability and any paid-asset budget: inspect one candidate before committing to modelling work or purchasing.
+- Further free-pack refinement may follow user feedback; paid assets are excluded.
 - Prototype cues can teach spatial principles immediately; do not describe an uncalibrated generic car as an exact replica of the lesson car.
 - Browser support, the user-supplied [C# web-export fork](https://github.com/sethyanow/godot-dotnet-web-export), and native Steam Input API integration are deferred. No further web-port work is required for the Windows prototype.
 
@@ -162,8 +161,6 @@ Sources accessed 18 October 2026. Manufacturer manuals describe example equipmen
 [cosmo]: https://cosmo-art.itch.io/low-poly-cars
 [kenneycars]: https://kenney.nl/assets/car-kit
 [quaternius]: https://quaternius.com/packs/cars.html
-[interiorpack]: https://www.gamedevmarket.net/asset/cars-pack-with-interior-low-poly-2
-[compact]: https://www.artstation.com/marketplace/p/byWy/generic-compact-car-with-interior-lowpoly-3d-model
 [roads]: https://kenney.nl/assets/city-kit-roads
 [formats]: https://docs.godotengine.org/en/stable/tutorials/assets_pipeline/importing_3d_scenes/available_formats.html
 [lowvelocity]: https://www.mathworks.com/help/driving/ref/lateralcontrollerstanley.html
