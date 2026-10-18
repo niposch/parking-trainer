@@ -11,13 +11,16 @@ public partial class ParkingGame
     Label gearLabel=null!,speedLabel=null!,steerLabel=null!,sensorLabel=null!,noticeLabel=null!,tutorText=null!,cameraLabel=null!,metricsLabel=null!;
     Label menuTitle=null!,menuSummary=null!,deviceLabel=null!;
     PanelContainer tutorPanel=null!;
-    Button tutorHeading=null!;
+    Button tutorHeading=null!,hintIcon=null!;
     bool HintCollapsed=true;
     void ToggleHint() {HintCollapsed=Tutor?!HintCollapsed:false;Tutor=true;ApplyHintLayout();SaveSettings();}
     void ApplyHintLayout()
     {
         tutorText.Visible=!HintCollapsed;
-        tutorPanel.Size=new(370,HintCollapsed?0:210);
+        tutorPanel.Visible=Tutor&&!HintCollapsed&&!Paused&&!Inspection;
+        hintIcon.Visible=Tutor&&HintCollapsed&&!Paused&&!Inspection&&!TouchEnabled;
+        tutorPanel.Size=new(370,210);
+        hintIcon.Size=new(44,44);
     }
     Button tutorButton=null!,guideButton=null!,steeringButton=null!,muteButton=null!;
     Color cream=new("f0f0e5"),ink=new("14262b"),accent=new("cff59f");
@@ -61,7 +64,12 @@ public partial class ParkingGame
         tutorPanel=Panel(hud,new(22,22),new(370,210),cream);var tv=new VBoxContainer();tutorPanel.AddChild(tv);
         tutorHeading=Button(tv,"01 / SET UP",ToggleHint);tutorHeading.Alignment=HorizontalAlignment.Left;tutorHeading.AddThemeFontSizeOverride("font_size",14);tutorText=Text(tv,"",16);tutorText.AutowrapMode=TextServer.AutowrapMode.WordSmart;tutorText.CustomMinimumSize=new(330,130);
         metricsLabel=Text(tv,"",13,new("52675f"));
-        metricsLabel.Hide();ApplyHintLayout();
+        metricsLabel.Hide();
+        hintIcon=Button(hud,"?",ToggleHint);hintIcon.TooltipText=Tr("Show parking hint (T / X)");
+        hintIcon.CustomMinimumSize=new(44,44);hintIcon.Size=new(44,44);
+        var iconStyle=Style(cream,null,22);iconStyle.ContentMarginLeft=iconStyle.ContentMarginRight=iconStyle.ContentMarginTop=iconStyle.ContentMarginBottom=0;
+        hintIcon.AddThemeStyleboxOverride("normal",iconStyle);
+        hintIcon.AddThemeFontSizeOverride("font_size",22);ApplyHintLayout();
         noticeLabel=Text(hud,"",18,cream);noticeLabel.Position=new(470,800);noticeLabel.Size=new(500,65);noticeLabel.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         noticeLabel.AddThemeColorOverride("font_shadow_color",ink);noticeLabel.AddThemeConstantOverride("shadow_offset_x",1);noticeLabel.AddThemeConstantOverride("shadow_offset_y",2);
         SetupMenu();
@@ -93,6 +101,7 @@ public partial class ParkingGame
         float tutorWidth=TouchEnabled&&pixels.X>=620&&pixels.X>pixels.Y&&pixels.Y<520?pixels.X-320:pixels.X-24;
         float tutorScale=unit*Mathf.Min(1,tutorWidth/370);
         tutorPanel.Scale=Vector2.One*tutorScale;tutorPanel.Position=new(12*unit,(TouchEnabled&&pixels.X<620?70:12)*unit);
+        hintIcon.Scale=Vector2.One*unit;hintIcon.Position=new(12*unit,12*unit);
         noticeLabel.Scale=Vector2.One*unit;
         noticeLabel.Size=new(Mathf.Min(520,pixels.X-24),70);
         noticeLabel.Position=new((size.X-noticeLabel.Size.X*unit)/2,size.Y-(TouchEnabled?260:90)*unit);
@@ -142,7 +151,7 @@ public partial class ParkingGame
         noticeLabel.Text=Notice!=""?Tr(Notice):Demo?Tr("DEMONSTRATION · observe the mirrors"):successTime>.8?Tr("Position looks good. Select P and apply the parking brake."):"";
         if(Inspection) noticeLabel.Text=Tr("PARKING INSPECTION · mouse / right stick to orbit\nMouse wheel to zoom · B / Enter to return to cockpit");
         if(!Inspection && successTime>.8 && Car.Gear==Gear.P && Car.ParkingBrake) noticeLabel.Text=Tr("PARKED. Take your time, or try a new variation.");
-        tutorPanel.Visible=Tutor&&!Paused&&!Inspection;
+
         int index=Scene.ClosestPath(Car.Pose);
         double progress=(double)Math.Max(0,index-Scene.ApproachEnd)/Math.Max(1,Scene.Path.Count-1-Scene.ApproachEnd);
         if(index<Scene.ApproachEnd-8)
@@ -170,7 +179,7 @@ public partial class ParkingGame
             tutorHeading.Text=Tr("04 / STRAIGHTEN & SECURE");
             tutorText.Text=Tr("Centre the wheels and creep to a good stopping position. Use mirrors and the camera together. Hold the brake, select P, then apply the parking brake.");
         }
-        tutorHeading.Text=(HintCollapsed?"[+] ":"[-] ")+tutorHeading.Text;
+        tutorHeading.Text="[-] "+tutorHeading.Text;
         ApplyHintLayout();
         if(IsInstanceValid(touchControls)) touchControls.HintHeader=tutorPanel.Visible?tutorHeading.GetGlobalRect():default;
         metricsLabel.Text=string.Format(Tr("Goal offset {0:0.00} m · angle {1:0}° · contacts {2}"),Scene.PositionError(Car.Pose),DrivingModel.AngleError(Car.Pose.Yaw,Scene.Goal.Yaw)*180/Math.PI,Car.Contacts);

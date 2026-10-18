@@ -74,7 +74,8 @@ html/export_icon=false
 html/custom_html_shell="res://web/shell.html"
 html/canvas_resize_policy=2
 html/focus_canvas_on_start=true
-progressive_web_app/enabled=false
+progressive_web_app/enabled=true
+progressive_web_app/ensure_cross_origin_isolation_headers=true
 "@ | Set-Content (Join-Path $stage 'export_presets.cfg') -Encoding UTF8
     Push-Location $stage
     try {
@@ -96,6 +97,7 @@ progressive_web_app/enabled=false
         }
         if ($packIndex.Contains('SDL3.dll')) { throw 'Windows native controller library entered the browser package.' }
     } finally { Pop-Location }
+    New-Item -ItemType File -Force -Path (Join-Path $output '.nojekyll') | Out-Null
     Copy-Item -LiteralPath (Join-Path $root 'licenses') -Destination $output -Recurse -Force
     Copy-Item -LiteralPath (Join-Path $root 'assets\THIRD_PARTY.md') -Destination $output -Force
     foreach ($file in Get-ChildItem -LiteralPath $output -File | Where-Object { $_.Extension -in @('.wasm','.pck','.js') }) {

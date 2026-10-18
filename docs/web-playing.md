@@ -30,14 +30,16 @@ The script checks for export errors, managed runtime content and accidental SDL 
 
 ## Hosting and validation
 
-Publish the contents of `builds/web/` on a static HTTPS host with `application/wasm` for WASM files, plus:
+Play at **https://niposch.de/parking-trainer/**. The Pages build uses Godot’s service worker to supply isolation within the game’s subdirectory; see [deployment and maintenance](deployment.md).
+
+Alternatively, publish the contents of `builds/web/` on a static HTTPS host with `application/wasm` for WASM files, plus:
 
 ```http
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
 
-If serving `.gz` files, retain the original request URLs and send `Content-Encoding: gzip` with the original MIME type. Include the generated licence/notice files. No game backend is needed; nothing has been publicly deployed.
+If serving `.gz` files, retain the original request URLs and send `Content-Encoding: gzip` with the original MIME type. Include the generated licence/notice files. No game backend is needed; Pages hosting is configured through [the deployment workflow](deployment.md).
 
 Append `?check=1` to run the browser checks. They verify trigger-event mappings and synthetic analog action values, automatic creep/braking, camera/sensor displays, all 15 type/difficulty/side demonstrations and inspection. They do not emulate physical Gamepad API discovery. Native-style synthetic joypad injection was unreliable in the experimental release runtime, so mapping and action handling are tested separately. Results and short frame-rate samples appear in the browser console; completion also appears on the page.
 
@@ -47,7 +49,7 @@ Scenario type and mirrored side survived a browser reload. Main assets total abo
 
 ## Touch devices and window sizing
 
-Options → On-screen controls → Auto / On / Off is available on desktop and mobile. Auto activates on a touchscreen/mobile device or the first actual touch; use On if detection fails. Independent gas/brake pads, steering, drag-to-look, gear selection, parking brake and inspection orbit are supported. See [touch controls](playing.md#touch-and-hint-controls). T / X / Hint collapses or expands the tutor without disabling it; the phase header is tappable. Input mode and hint state are saved in browser storage.
+Options → On-screen controls → Auto / On / Off is available on desktop and mobile. Auto activates on a touchscreen/mobile device or the first actual touch; use On if detection fails. Independent gas/brake pads, steering, drag-to-look, gear selection, parking brake and inspection orbit are supported. See [touch controls](playing.md#touch-and-hint-controls). T / X / Hint collapses or expands the tutor without disabling it; the collapsed hint is a single `?` icon. Input mode and hint state are saved in browser storage.
 
 Canvas and 3D viewport follow the actual window size. UI stays at native pixel size, menus reflow/scroll in portrait or small landscape windows, and the 3D camera retains a perspective projection without letterboxing. High-resolution mobile rendering may be demanding; the experimental threaded .NET/WebGL 2 build still requires a compatible browser and isolation headers. A physical phone/tablet has not been validated.
 

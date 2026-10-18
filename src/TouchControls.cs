@@ -122,7 +122,7 @@ internal partial class TouchControls : Control
             string name=pair.Key;var rect=pair.Value;
             bool on=name==Gear.ToString() || name=="parking"&&ParkingBrake;
             DrawStyleBox(on?selected:normal,rect);
-            string label=name switch {"pause"=>"Menu","camera"=>"View","tutor"=>"Hint","parking"=>"P\nBRAKE","steer"=>"<  STEER  >","gas"=>"GAS","brake"=>"BRAKE","return"=>"Return to cockpit","zoom-in"=>"+","zoom-out"=>"-",_=>name};
+            string label=name switch {"pause"=>"Menu","camera"=>"View","tutor"=>"?","parking"=>"P\nBRAKE","steer"=>"<  STEER  >","gas"=>"GAS","brake"=>"BRAKE","return"=>"Return to cockpit","zoom-in"=>"+","zoom-out"=>"-",_=>name};
             if(name is "gas" or "brake")
             {
                 float value=name=="gas"?Gas:Brake;

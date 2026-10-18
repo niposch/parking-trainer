@@ -2,6 +2,8 @@
 
 A first-person parking practice game for Windows and experimental desktop browsers, written in C# for Godot 4.7.2 Mono. Uses **free CC0 assets only**, with no vehicle brands.
 
+Play in your browser: **[niposch.de/parking-trainer](https://niposch.de/parking-trainer/)**. Find browser tools and games at **[Live projects](https://niposch.de/live/)**.
+
 ## Play
 
 Double-click **Launch.cmd**, or run `builds/ParkingPractice/ParkingPractice.exe` from its folder. The local runtime bundle uses the installed Godot version and the machine's .NET 8 runtime; it is not a standalone installer.
@@ -43,8 +45,8 @@ Runtime input/UI checks:
 
 See [validation and remaining limits](docs/prototype-validation.md), [requirements](docs/requirements.md), and [asset provenance](assets/THIRD_PARTY.md). The 2026 Steam Controller is detected by the compatibility driver and both physical analog triggers were checked with the user; a complete through-Steam play session remains to be checked. The generic vehicle, camera optics, and reference points are not calibrated to the lesson car.
 
-This is a standalone Git repository at `C:\Users\Nickp\Development\parking-trainer`. Run Git commands from this directory. No remote or publishing destination is configured.
+This is a standalone Git repository at `C:\Users\Nickp\Development\parking-trainer`. Run Git commands from this directory. Source is published to [niposch/parking-trainer](https://github.com/niposch/parking-trainer); Pages deployment is documented in [deployment.md](docs/deployment.md).
 
 For the browser prototype, double-click **Launch-Web.cmd**, or run `./serve-web.ps1 -Open`. The generated build is in `builds/web/`. Use an ordinary desktop browser for mouse capture and press a gamepad button to connect. See [browser controls, building and hosting](docs/web-playing.md) and the original [feasibility investigation](docs/web-feasibility.md). Physical standard-gamepad testing remains pending.
 
-Touch controls: **Esc → Options → On-screen controls → Auto / On / Off**. Auto activates on touch devices or the first real touch; On works on desktop too. Drag empty space to look, hold the steering pad, and use the separate gas/brake pads. Tap higher on a pedal for more pressure. Hold the brake to select a gear, then release P BRAKE to move. The hint starts collapsed and remembers your preference. The game renders at the full window size in both native and web builds; menus reflow on narrow windows.
+Touch controls: **Esc → Options → On-screen controls → Auto / On / Off**. Auto activates on touch devices or the first real touch; On works on desktop too. Drag empty space to look, hold the steering pad, and use the separate gas/brake pads. Tap higher on a pedal for more pressure. Hold the brake to select a gear, then release P BRAKE to move. The hint starts as a single `?` icon and remembers your preference. The game renders at the full window size in both native and web builds; menus reflow on narrow windows.

@@ -49,10 +49,11 @@ public partial class ParkingGame
         try
         {
             if(DisplayServer.GetName()=="headless") {GetWindow().Size=new(1280,800);await PhysicsFrames(3);LayoutHud();}
+            NewScenario(false);Pause(false);
             Tutor=true;HintCollapsed=false;ApplyHintLayout();UpdateHud();
-            var expanded=tutorPanel.GetCombinedMinimumSize();
             ToggleHint();await PhysicsFrames(3);
-            Check(Tutor && HintCollapsed && !tutorText.Visible && tutorPanel.Size.Y<expanded.Y,"Hint collapses to its header without disabling the tutor");
+            Check(Tutor && HintCollapsed && !tutorText.Visible && !tutorPanel.Visible && (TouchEnabled || hintIcon.Visible),"Collapsed hint hides the entire panel and preserves the tutor");
+            Check(hintIcon.Size.X<=44 && hintIcon.Size.Y<=44,"Collapsed desktop hint occupies only one 44 px icon");
             ToggleHint();Check(tutorText.Visible && !HintCollapsed,"Hint expands again");
             Input.ActionRelease(GasAction);Input.ActionRelease(BrakeAction);
             NewScenario(false);SetTouchMode(1);Pause(false);

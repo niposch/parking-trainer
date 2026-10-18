@@ -35,7 +35,15 @@
       document.getElementById('error').textContent = String(error?.message || error);
       progress.hidden = true;
     }
+    async function start() {
     const missing = Engine.getMissingFeatures({threads:true});
+    if (missing.length && config.serviceWorker && config.ensureCrossOriginIsolationHeaders && 'serviceWorker' in navigator && !navigator.serviceWorker.controller) {
+      document.getElementById('message').textContent = 'Preparing browser support…';
+      await engine.installServiceWorker();
+      await navigator.serviceWorker.ready;
+      location.reload();
+      return;
+    }
     if (missing.length) fail('Your browser or host is missing: ' + missing.join(', ') + '. Use a current desktop browser and HTTPS (or the local test server).');
     else engine.startGame({
       onProgress(current,total) { if(total) { progress.max=total; progress.value=current; } },
@@ -49,6 +57,8 @@
         if(checking && args.join(' ').includes('WEB FAILED')) { results.hidden=false; results.textContent=args.join(' '); }
       }
     }).then(()=>{ loading.hidden=true; },fail);
+    }
+    start().catch(fail);
   </script>
 </body>
 </html>
