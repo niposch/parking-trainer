@@ -14,8 +14,9 @@
 - Blocky, flat-colored cars are acceptable, as in the user's second reference image. Reuse assets; avoid substantial custom vehicle modelling.
 - Free assets only; no paid packs. All driving must be first person. Mount mirrors, the camera screen, and a minimal digital speed/gear/parking-brake display physically in the cockpit. Keep the forward view clear, with instruments behind a realistically sized wheel and the camera in the center console. The optional tutor can remain an overlay.
 - No existing vehicle brands, logos, model names, branded scenery, or copied infotainment artwork in the game. Use generic controller symbols. Steam Input remains the requested external integration.
+- Feedback update: six stepped proximity indicators; automatically switch to a third-person orbit view after the car is parked and secured, with driving disabled until returning to the cockpit. Remove D-pad camera shortcuts, including arrow-key camera movement that Steam could emulate.
 
-**Owner-provided facts:** lessons are in German; the learning car is a SEAT a few years old, with a reversing camera, 360° camera, and front/rear distance beepers. Exact model, transmission variant, controller, and guide-line behavior are unknown. Real manufacturer names in this document identify research sources only.
+**Owner-provided facts:** lessons are in German; the learning car is a SEAT a few years old, with a reversing camera, 360° camera, and front/rear distance beepers. The controller is the **Steam Controller (2026)**. Exact car model, transmission variant, and guide-line behavior are unknown. Real manufacturer names in this document identify research sources only.
 
 **Provisional assumptions:** left-hand drive, right-hand traffic, dry flat ground, one generic player car. These are configurable assumptions, not confirmed details of the learning car.
 
@@ -63,7 +64,7 @@ Use generic fictional vehicle names. Inspect models, textures, badges, and plate
 
 **INP-1:** Initial Steam Input route: launch the exported Windows executable as a non-Steam game and use Steam's gamepad emulation into Godot input actions. This avoids needing a native Steamworks API dependency for the first prototype. [Valve emulation guidance][steamemulation], [Adding a non-Steam shortcut][steamshortcut]
 
-**INP-2:** Independent analog gas and brake, left-stick steering, right-stick look, and discrete actions for gear selection, parking brake, camera selection, tutor, reset, and pause. All menus must work with the controller. Keep prompts generic and remappable. Physical controller model remains open; test independent trigger ranges and prevent duplicate physical/virtual-device input.
+**INP-2:** Independent analog gas and brake, left-stick steering, right-stick look, and discrete actions for gear selection, parking brake, camera selection, tutor, reset, and pause. All menus must work with the controller. Keep prompts generic and remappable. Physical controller is the Steam Controller (2026); test independent trigger ranges and prevent duplicate physical/virtual-device input. D-pad navigates menus, without camera shortcuts.
 
 **INP-3:** Provide calibration for drift, dead zones, trigger endpoints, sensitivity, and inversion. Pause on focus loss, Steam overlay/menu use, or disconnect; clear stale input and require deliberate resume. Steam remapping must retain analog triggers rather than converting them to keyboard presses. Godot supports analog input actions but device behavior still requires testing. [Controller documentation][controllers]
 

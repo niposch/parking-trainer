@@ -23,6 +23,7 @@ public partial class ParkingGame
     void SetupViews()
     {
         eye=new Camera3D {Current=true,Near=.035f,Far=75,Fov=Fov,CullMask=27};vehicle.AddChild(eye);
+        inspectionCamera=new Camera3D {Near=.08f,Far=75,Fov=60,CullMask=11};vehicle.AddChild(inspectionCamera);
         rearViewport=View(720,420,out rearCamera,7);rearCamera.KeepAspect=Camera3D.KeepAspectEnum.Width;rearCamera.Fov=112;
         for(int i=0;i<3;i++) {mirrorViewports[i]=View(i==1?420:360,i==1?170:210,out mirrorCameras[i]);}
         for(int i=0;i<4;i++) {surroundSources[i]=View(380,380,out surroundCameras[i]);surroundCameras[i].Fov=150;}
@@ -68,6 +69,7 @@ void fragment(){
     void UpdateViews()
     {
         eye.Position=new(-.36f,EyeHeight,-1.25f);eye.Rotation=new(LookPitch,LookYaw,0);eye.Fov=Fov;
+        UpdateInspectionCamera();
         if(autoCapture && captureView=="asset") {eye.GlobalPosition=vehicle.ToGlobal(new(-4,2.5f,-6));eye.LookAt(vehicle.ToGlobal(new(0,.8f,-1.325f)));}
         rearCamera.GlobalTransform=vehicle.GlobalTransform*new Transform3D(Basis.FromEuler(new(-.45f,Mathf.Pi,0)),new(.04f,1.10f,.72f));
         // Planar virtual-eye mirrors: reflect the eye about each mirror plane, then
@@ -103,7 +105,7 @@ void fragment(){
         UpdateGuides();
         var reference=Scene.Obstacles.First(o=>!o.Curb);
         var corner=new Pose(reference.Shape.X,reference.Shape.Z,reference.Shape.Yaw).Point(-reference.Shape.Width/2+.09,reference.Shape.Length/2+.025);
-        landmark.Position=new((float)corner.X,.68f,(float)corner.Z);landmark.Visible=Tutor;
+        landmark.Position=new((float)corner.X,.68f,(float)corner.Z);landmark.Visible=Tutor&&!Inspection;
     }
     double lastGuide=double.NaN;bool lastDynamic;
     void UpdateGuides()

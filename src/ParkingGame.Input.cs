@@ -7,7 +7,34 @@ public partial class ParkingGame
     InputEvent? gasBinding,brakeBinding;
     string bindingAction="",lastInput="";
     Label pedalStatus=null!;
+    bool controllerCheck;
+    double controllerCheckTime,maxLeft,maxRight;
+    readonly HashSet<int> leftTriggerSteps=new(),rightTriggerSteps=new();
+    void UpdateControllerCheck()
+    {
+        if(!controllerCheck) return;
+        if(modernController.Connected)
+        {
+            double left=modernController.Axes[4],right=modernController.Axes[5];
+            maxLeft=Math.Max(maxLeft,left);maxRight=Math.Max(maxRight,right);
+            leftTriggerSteps.Add((int)(left*10));rightTriggerSteps.Add((int)(right*10));
+        }
+        controllerCheckTime+=GetProcessDeltaTime();
+        if(controllerCheckTime<35) return;
+        GD.Print($"HARDWARE CHECK: {modernController.Name}; L2 max {maxLeft:0.00}, {leftTriggerSteps.Count} steps; R2 max {maxRight:0.00}, {rightTriggerSteps.Count} steps");
+        bool passed=modernController.Connected&&maxLeft>.7&&maxRight>.7&&leftTriggerSteps.Count>3&&rightTriggerSteps.Count>3;
+        GD.Print(passed?"HARDWARE CHECK PASS: physical analog triggers received":"HARDWARE CHECK INCOMPLETE: both physical triggers need a slow full press");
+        GetTree().Quit(passed?0:2);
+    }
     bool CaptureDrivingMouse=>!Paused&&!autoCapture;
+    bool NativeDriving=>modernController?.Connected==true && selectedController==ModernController.Device;
+    float PedalStrength(string action)
+    {
+        bool gas=action==GasAction;
+        if(NativeDriving && (gas?gasBinding:brakeBinding)==null)
+            return Mathf.Clamp((modernController.Axes[gas?5:4]-.02f)/.98f,0,1);
+        return Input.GetActionStrength(action);
+    }
 
     void UpdateMouseCapture()=>Input.MouseMode=CaptureDrivingMouse?Input.MouseModeEnum.Captured:Input.MouseModeEnum.Visible;
     void SetupPedalActions()
@@ -27,8 +54,8 @@ public partial class ParkingGame
     }
     void ReadPedals()
     {
-        Gas=Input.GetActionStrength(GasAction);
-        Brake=Input.GetActionStrength(BrakeAction);
+        Gas=PedalStrength(GasAction);
+        Brake=PedalStrength(BrakeAction);
     }
     void BeginPedalBinding(string action)
     {
@@ -43,6 +70,10 @@ public partial class ParkingGame
     }
     public override void _Input(InputEvent ev)
     {
+        // The standalone SDL reader has no window, so suppress its UI actions
+        // while this Godot window is unfocused. Raw state is still available to diagnostics.
+        if(ev is InputEventJoypadButton or InputEventJoypadMotion && !smokeMode && !controllerCheck && !GetWindow().HasFocus())
+        {GetViewport().SetInputAsHandled();return;}
         if(bindingAction!="")
         {
             if(ev is InputEventKey {Pressed:true,Keycode:Key.Escape})
@@ -77,6 +108,7 @@ public partial class ParkingGame
         else if(ev is InputEventKey {Pressed:true,Echo:false} key) lastInput=$"Keyboard: {key.AsText()} (digital)";
         if(ev is InputEventMouseMotion look && CaptureDrivingMouse)
         {
+            if(Inspection) {Orbit(look.ScreenRelative.X*.005f,look.ScreenRelative.Y*.004f);return;}
             LookYaw-=look.ScreenRelative.X*.0025f;
             LookPitch=Mathf.Clamp(LookPitch-look.ScreenRelative.Y*.0025f,-.65f,.55f);
         }
@@ -85,10 +117,10 @@ public partial class ParkingGame
     {
         if(!IsInstanceValid(deviceLabel)) return;
         var devices=Input.GetConnectedJoypads();
-        deviceLabel.Text=devices.Count>0?string.Format(Tr("Gamepads: {0}"),string.Join(", ",devices.Select(id=>$"{id}: {Input.GetJoyName(id)}"))):
+        deviceLabel.Text=modernController?.Connected==true?string.Format(Tr("Controller: {0} · SDL 3.4.16 compatibility driver"),modernController.Name):devices.Count>0?string.Format(Tr("Gamepads: {0}"),string.Join(", ",devices.Select(id=>$"{id}: {Input.GetJoyName(id)}"))):
             Tr("No gamepad detected. Steam may be emulating keyboard/mouse. Use a Gamepad layout for analog L2/R2; mouse-button pedals are digital.");
         if(lastInput!="") deviceLabel.Text+="\n"+lastInput;
-        if(IsInstanceValid(pedalStatus)) pedalStatus.Text=string.Format(Tr("Input test · L2 brake {0:0}% · R2 gas {1:0}%"),Input.GetActionStrength(BrakeAction)*100,Input.GetActionStrength(GasAction)*100);
+        if(IsInstanceValid(pedalStatus)) pedalStatus.Text=string.Format(Tr("Input test · L2 brake {0:0}% · R2 gas {1:0}%"),PedalStrength(BrakeAction)*100,PedalStrength(GasAction)*100);
     }
     void SavePedalBindings(ConfigFile cfg)
     {

@@ -22,6 +22,9 @@ public partial class ParkingGame
             Check(Paused && Car.Gear==Gear.P && Car.ParkingBrake,"Starts paused in P with parking brake applied");
             Check(mirrorScreens.All(m=>m.GetParent()==vehicle),"Mirrors are physically mounted on the car");
             Check(gearLabel.GetViewport()!=GetViewport() && rearRect.GetViewport()!=GetViewport(),"Instruments and parking feed render on cockpit screens");
+            sensorGraphic.SetRanges(new[]{2.0,.25,.8},new[]{.5,1.2,2.0});
+            Check(Enumerable.Range(0,6).Select(sensorGraphic.Level).SequenceEqual(new[]{0,4,2,3,1,0}),"Each front/rear sensor has independent stepped visual proximity");
+            Check(ParkingSensors.ProximityLevel(.3)==3 && ParkingSensors.ProximityLevel(.6)==2 && ParkingSensors.ProximityLevel(1)==1 && ParkingSensors.ProximityLevel(1.6)==0,"Sensor display thresholds match the documented steps");
             resumeButton.EmitSignal(Godot.Button.SignalName.Pressed);
             await PhysicsFrames(3);Check(!Paused,"Menu resume button starts practice");
             var secured=Car.Pose;await PhysicsFrames(120);
@@ -29,6 +32,14 @@ public partial class ParkingGame
             Input.ParseInputEvent(new InputEventMouseMotion {ScreenRelative=new(30,-10)});await PhysicsFrames(3);
             Check(LookYaw<-.05 && LookPitch>0 && CaptureDrivingMouse,"Mouse look activates in driving mode");
             if(DisplayServer.GetName()!="headless") Check(Input.MouseMode==Input.MouseModeEnum.Captured,"Windows cursor is captured while driving");
+            float unchangedYaw=LookYaw,unchangedPitch=LookPitch;
+            foreach(var direction in new[]{JoyButton.DpadLeft,JoyButton.DpadRight,JoyButton.DpadUp,JoyButton.DpadDown})
+            {
+                Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=direction,Pressed=true});await PhysicsFrames(3);
+                Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=direction,Pressed=false});await PhysicsFrames(3);
+            }
+            SendKey(Key.Left,true);await PhysicsFrames(10);SendKey(Key.Left,false);
+            Check(LookYaw==unchangedYaw && LookPitch==unchangedPitch,"D-pad and Steam-emulated arrow keys do not move the driving camera");
             foreach(var pedal in new[]{(Axis:JoyAxis.TriggerLeft,Action:BrakeAction),(Axis:JoyAxis.TriggerRight,Action:GasAction)})
             {
                 Input.ParseInputEvent(new InputEventJoypadMotion {Device=15,Axis=pedal.Axis,AxisValue=.52f});await PhysicsFrames(3);
@@ -67,7 +78,13 @@ public partial class ParkingGame
             SendKey(Key.S,false);await PhysicsFrames(120);Check(Car.Speed<-.2,"Same released brake produces reverse creep");
             SendKey(Key.S,true);await PhysicsFrames(100);Tap(Key.Key1);Tap(Key.Space);await PhysicsFrames(3);
             Check(Car.Gear==Gear.P && Car.ParkingBrake,"Parking sequence secures the car");
-            int cameraBefore=CameraMode;Tap(Key.Tab);await PhysicsFrames(3);Check(CameraMode==(cameraBefore+1)%3,"Parking display selection");
+            Check(Inspection && inspectionCamera.Current,"Securing the car after moving automatically enters third-person inspection");
+            var inspectedPose=Car.Pose;float orbitBefore=orbitYaw;
+            Input.ParseInputEvent(new InputEventMouseMotion {ScreenRelative=new(50,10)});SendKey(Key.W,true);await PhysicsFrames(30);SendKey(Key.W,false);
+            Check(orbitYaw!=orbitBefore && Car.Pose==inspectedPose && Car.Speed==0,"Inspection orbits with the mouse while driving stays disabled");
+            Tap(Key.Enter);await PhysicsFrames(5);
+            Check(!Inspection && eye.Current && Car.ParkingBrake,"Return from inspection restores cockpit without releasing the parking brake");
+            int cameraBefore=CameraMode;Tap(Key.Tab);await PhysicsFrames(3);Check(CameraMode==(cameraBefore+1)%2 && sensorGraphic.Visible && (rearRect.Visible||surroundRect.Visible),"Camera and stepped sensors remain visible together when changing display");
             bool tutorBefore=Tutor;Tap(Key.T);await PhysicsFrames(3);Check(Tutor!=tutorBefore,"Tutor toggle");
             Tap(Key.Escape);await PhysicsFrames(3);Check(Paused,"Pause input");SendKey(Key.S,false);
             float yawBefore=LookYaw;Input.ParseInputEvent(new InputEventMouseMotion {ScreenRelative=new(100,0)});await PhysicsFrames(3);

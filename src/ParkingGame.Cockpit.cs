@@ -4,6 +4,7 @@ namespace ParkingTrainer;
 public partial class ParkingGame
 {
     Node3D[] mirrorScreens=new Node3D[3];
+    ParkingSensors sensorGraphic=null!;
     readonly Vector3[] mirrorCentres={new(-1.04f,1.04f,-2.05f),new(-.10f,1.37f,-1.72f),new(1.04f,1.04f,-2.05f)};
     SubViewport FlatDisplay(int width,int height,out Control canvas)
     {
@@ -34,13 +35,14 @@ public partial class ParkingGame
         var dash=Screen(new(-.38f,.93f,-2.26f),new(.40f,.16f),cluster.GetTexture());dash.Rotation=new(-.16f,0,0);
         var display=FlatDisplay(720,480,out var console);
         cameraLabel=Text(console,"REAR",24,new("d0f39f"));cameraLabel.Position=new(22,10);
-        rearRect=Image(console,rearViewport,true);rearRect.Position=new(0,45);rearRect.Size=new(720,370);rearRect.StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered;
+        rearRect=Image(console,rearViewport,true);rearRect.Position=new(0,45);rearRect.Size=new(450,370);rearRect.StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered;
         surroundRect=new TextureRect {Texture=surroundSources[0].GetTexture(),Material=surroundMaterial,
             ExpandMode=TextureRect.ExpandModeEnum.IgnoreSize,StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered,
-            Position=new(0,45),Size=new(720,370),Visible=false,MouseFilter=Control.MouseFilterEnum.Ignore};console.AddChild(surroundRect);
+            Position=new(0,45),Size=new(450,370),Visible=false,MouseFilter=Control.MouseFilterEnum.Ignore};console.AddChild(surroundRect);
+        sensorGraphic=new ParkingSensors {Position=new(450,45),Size=new(260,370)};console.AddChild(sensorGraphic);
         sensorLabel=Text(console,"",23,new("e6ece4"));sensorLabel.Position=new(22,435);
-        WorldFactory.Box(vehicle,new(.22f,.58f,-2.05f),new(.40f,.35f,.15f),new("202a2d")).Layers=2;
-        var media=Screen(new(.22f,.78f,-1.93f),new(.34f,.227f),display.GetTexture());media.Rotation=new(-.13f,-.20f,0);
+        WorldFactory.Box(vehicle,new(.08f,.58f,-2.05f),new(.40f,.35f,.15f),new("202a2d")).Layers=2;
+        var media=Screen(new(.08f,.78f,-1.93f),new(.34f,.227f),display.GetTexture());media.Rotation=new(-.13f,-.20f,0);
         // Physical mirror glass is visible only to the driver's camera. Reflection
         // cameras omit the glass layer to prevent recursive render feedback.
         for(int i=0;i<3;i++) mirrorScreens[i]=Screen(mirrorCentres[i],i==1?new(.25f,.085f):new(.26f,.15f),mirrorViewports[i].GetTexture(),true);

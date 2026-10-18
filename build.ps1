@@ -26,7 +26,7 @@ try {
         New-Item -ItemType File -Path (Join-Path $projectRoot 'builds\.gdignore') -Force | Out-Null
         Copy-Item -LiteralPath (Join-Path $godotRoot 'Godot_v4.7.2-stable_mono_win64.exe') -Destination (Join-Path $bundle 'ParkingPractice.exe')
         foreach ($entry in @('GodotSharp')) { Copy-Item -LiteralPath (Join-Path $godotRoot $entry) -Destination $bundle -Recurse -Force }
-        foreach ($entry in @('project.godot','Main.tscn','assets','src','.godot')) { Copy-Item -LiteralPath (Join-Path $projectRoot $entry) -Destination $bundle -Recurse -Force }
+        foreach ($entry in @('project.godot','Main.tscn','assets','src','native','.godot')) { Copy-Item -LiteralPath (Join-Path $projectRoot $entry) -Destination $bundle -Recurse -Force }
         Copy-Item -LiteralPath (Join-Path $projectRoot 'docs\playing.md') -Destination (Join-Path $bundle 'README.md') -Force
         Copy-Item -LiteralPath (Join-Path $projectRoot 'licenses') -Destination $bundle -Recurse -Force
         Copy-Item -LiteralPath (Join-Path $projectRoot 'assets\THIRD_PARTY.md') -Destination $bundle -Force

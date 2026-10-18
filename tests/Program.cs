@@ -41,6 +41,13 @@ for(int seed=0;seed<100;seed++)
 var obstacle=new Obstacle(new(0,-5,2,2,0),"test");
 var car=new DrivingModel{Gear=Gear.D,ParkingBrake=false,Pose=new(0,0,0),Speed=3};
 Check(car.Sensor(new[]{obstacle},true,0)<.6,"Sensor measures from front bumper");
+var sectorCar=new DrivingModel();
+var frontLeft=new[]{new Obstacle(new(-.95,-4.45,.3,.3,0),"front-left")};
+var rearLeft=new[]{new Obstacle(new(-.95,1.80,.3,.3,0),"rear-left")};
+Check(sectorCar.Sensor(frontLeft,true,-1)<1.3,"Front left sensor fans outward toward front-left obstacle");
+Check(sectorCar.Sensor(frontLeft,true,1)==2,"Front right sensor does not report an obstacle on the opposite side");
+Check(sectorCar.Sensor(rearLeft,false,-1)<1.3,"Rear left sensor fans outward toward rear-left obstacle");
+Check(sectorCar.Sensor(rearLeft,false,1)==2,"Rear right sensor does not report an obstacle on the opposite side");
 car.Move(1,new[]{obstacle});
 Check(car.Contacts==1 && !DrivingModel.Collides(car.Pose,new[]{obstacle}),"Swept collision stops without tunnelling");
 Check(new Footprint(0,0,2,4,.4).Overlaps(new(0,0,2,4,-.3)),"Rotated SAT overlap");

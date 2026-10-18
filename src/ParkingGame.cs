@@ -19,10 +19,12 @@ public partial class ParkingGame : Node3D
     int demoStep; double demoCarry;
     bool autoCapture,smokeMode,captureTaken; string capturePath="",captureView=""; int frames; ulong captureStarted;
     int selectedController=-1;
+    ModernController modernController=null!;
     public override void _Ready()
     {
         DisplayServer.WindowSetTitle("Parking Practice · Prototype 01");
         smokeMode=OS.GetCmdlineUserArgs().Contains("--smoke");
+        controllerCheck=OS.GetCmdlineUserArgs().Contains("--controller-check");
         TranslationServer.SetLocale("en");
         System.Globalization.CultureInfo.CurrentCulture=System.Globalization.CultureInfo.GetCultureInfo("en");
         foreach(string arg in OS.GetCmdlineUserArgs())
@@ -43,11 +45,12 @@ public partial class ParkingGame : Node3D
         beep=new AudioStreamPlayer(); AddChild(beep);
         Input.JoyConnectionChanged+=ControllerChanged;
         foreach(int device in Input.GetConnectedJoypads()) {selectedController=device;break;}
+        modernController=new ModernController();
         GD.Print("Controllers available: "+string.Join(", ",Input.GetConnectedJoypads().Select(id=>$"{id}:{Input.GetJoyName(id)}")));
         NewScenario(false); UpdateMenu();
         if(OS.GetCmdlineUserArgs().Contains("--smoke")) RunSmoke();
     }
-    public override void _ExitTree() { Input.JoyConnectionChanged-=ControllerChanged; }
+    public override void _ExitTree() { Input.JoyConnectionChanged-=ControllerChanged;modernController?.Dispose(); }
     void ControllerChanged(long device,bool connected)
     {
         if(!connected && device==selectedController) {selectedController=-1;Pause(true);Message("Controller disconnected. Reconnect and resume.");}
@@ -66,7 +69,7 @@ public partial class ParkingGame : Node3D
         lot=new Node3D { Name="PracticeLot" };AddChild(lot);WorldFactory.BuildLot(lot,Scene);
         Car=new DrivingModel {Pose=Scene.Spawn,Gear=Gear.P,ParkingBrake=true};
         Gas=0;Brake=0;
-        Elapsed=0;successTime=0;Demo=false;demoStep=1;demoCarry=0;LookYaw=0;LookPitch=0;
+        Elapsed=0;successTime=0;Demo=false;Inspection=false;inspectionAcknowledged=false;demoStep=1;demoCarry=0;LookYaw=0;LookPitch=0;
         Notice=""; Paused=true;UpdateMouseCapture();
         if(autoCapture)
         {
@@ -74,6 +77,8 @@ public partial class ParkingGame : Node3D
             if(captureView=="reverse") CameraMode=0;
             if(captureView=="surround") { CameraMode=1; LookYaw=-.62f;LookPitch=-.40f; }
             if(captureView=="console") { CameraMode=0;LookYaw=-.62f;LookPitch=-.40f; }
+            if(captureView=="sensors") {CameraMode=0;LookYaw=-.62f;LookPitch=-.40f;Car.Pose=Scene.Goal.Advance(1.35,0);}
+            if(captureView=="inspection") {Car.Pose=Scene.Goal;Car.Gear=Gear.P;BeginInspection();}
             if(captureView=="left-mirror") { LookYaw=1.05f;LookPitch=-.10f; }
             if(captureView=="shoulder") { LookYaw=-2.25f; LookPitch=-.12f; }
             Car.Steer=-.4;
@@ -92,6 +97,7 @@ public partial class ParkingGame : Node3D
     void Message(string message) {Notice=message;noticeTime=4;}
     public override void _UnhandledInput(InputEvent ev)
     {
+        if(controllerCheck) return;
         bool key(Key code)=>ev is InputEventKey k && k.Pressed&&!k.Echo&&k.Keycode==code;
         bool pad(JoyButton code)=>ev is InputEventJoypadButton b&&b.Pressed&&b.Device==selectedController&&b.ButtonIndex==code;
         if(key(Key.Escape)||pad(JoyButton.Start)) {Pause(!Paused);GetViewport().SetInputAsHandled();return;}
@@ -99,7 +105,13 @@ public partial class ParkingGame : Node3D
         if(key(Key.F6)) {NewScenario(true);return;}
         if(key(Key.F1)||pad(JoyButton.Back)) {Pause(true);return;}
         if(Paused) return;
-        if(key(Key.Tab)||pad(JoyButton.Y)) {CameraMode=(CameraMode+1)%3;SaveSettings();}
+        if(Inspection)
+        {
+            if(key(Key.Enter)||pad(JoyButton.B)) EndInspection();
+            if(ev is InputEventMouseButton {Pressed:true} scroll) orbitDistance=Mathf.Clamp(orbitDistance+(scroll.ButtonIndex==MouseButton.WheelUp?-.5f:scroll.ButtonIndex==MouseButton.WheelDown?.5f:0),3.5f,10);
+            return;
+        }
+        if(key(Key.Tab)||pad(JoyButton.Y)) {CameraMode=(CameraMode+1)%2;SaveSettings();}
         if(key(Key.T)||pad(JoyButton.X)) {Tutor=!Tutor;SaveSettings();}
         if(key(Key.G)) DynamicGuides=!DynamicGuides;
         if(key(Key.Space)||pad(JoyButton.RightStick)) {Car.ParkingBrake=!Car.ParkingBrake;Message(Car.ParkingBrake?"Parking brake on":"Parking brake released");}
@@ -108,10 +120,8 @@ public partial class ParkingGame : Node3D
         if(key(Key.Key3)) Shift(Gear.N);
         if(key(Key.Key4)||pad(JoyButton.RightShoulder)) Shift(Gear.D);
         if(pad(JoyButton.A)) Shift((Gear)(((int)Car.Gear+1)%4));
-        if(pad(JoyButton.DpadLeft)) {LookYaw=1.05f;LookPitch=0;}
-        if(pad(JoyButton.DpadRight)) {LookYaw=-1.05f;LookPitch=0;}
-        if(pad(JoyButton.DpadDown)||key(Key.C)) {LookYaw=Mathf.Pi-.25f;LookPitch=0;}
-        if(pad(JoyButton.DpadUp)||key(Key.Home)) {LookYaw=0;LookPitch=0;}
+        if(key(Key.C)) {LookYaw=Mathf.Pi-.25f;LookPitch=0;}
+        if(key(Key.Home)) {LookYaw=0;LookPitch=0;}
         if(pad(JoyButton.B)||key(Key.V)) {LookYaw=-.62f;LookPitch=-.40f;}
         if(key(Key.F2)) StartDemo();
     }
@@ -121,37 +131,45 @@ public partial class ParkingGame : Node3D
         if(!Car.Select(gear,Brake)) Message("Stop and hold the brake to change gear.");
         else Message(string.Format(Tr("Selected {0}"),gear));
     }
-    float Axis(JoyAxis axis)=>selectedController>=0?Input.GetJoyAxis(selectedController,axis):0;
+    float Axis(JoyAxis axis)=>selectedController==ModernController.Device&&modernController.Connected?modernController.Axes[(int)axis]:selectedController>=0?Input.GetJoyAxis(selectedController,axis):0;
+    bool PadHeld(JoyButton button)=>selectedController==ModernController.Device&&modernController.Connected?modernController.Buttons[(int)button]:selectedController>=0&&Input.IsJoyButtonPressed(selectedController,button);
     float Dead(float value) =>Math.Abs(value)<Deadzone?0:Math.Sign(value)*(Math.Abs(value)-Deadzone)/(1-Deadzone);
     public override void _PhysicsProcess(double delta)
     {
         float dt=(float)delta;
+        if(!smokeMode && !autoCapture) modernController.Poll(delta,Input.GetConnectedJoypads().Count==0,connected=>
+        {
+            if(connected) selectedController=ModernController.Device;
+            else if(selectedController==ModernController.Device) {selectedController=-1;Pause(true);Message("Controller disconnected. Reconnect and resume.");}
+            UpdateDeviceStatus();
+        });
         if(noticeTime>0) {noticeTime-=delta;if(noticeTime<=0) Notice="";}
         ContactFlash=Math.Max(0,ContactFlash-delta);
         if(!Paused && !autoCapture)
         {
-            if(Demo) RunDemo(delta);
+            if(Inspection) Orbit(Dead(Axis(JoyAxis.RightX))*dt*1.9f,Dead(Axis(JoyAxis.RightY))*dt*1.35f);
+            else if(Demo) RunDemo(delta);
             else
             {
                 ReadPedals();
-                double steerInput=-Dead(Axis(JoyAxis.LeftX))+(Input.IsPhysicalKeyPressed(Key.A)?1:0)-(Input.IsPhysicalKeyPressed(Key.D)?1:0);
+                double steerInput=-Dead(Axis(JoyAxis.LeftX))+(!NativeDriving&&Input.IsPhysicalKeyPressed(Key.A)?1:0)-(!NativeDriving&&Input.IsPhysicalKeyPressed(Key.D)?1:0);
                 steerInput=Math.Clamp(steerInput,-1,1);
                 if(RateSteering) Car.Steer=Math.Clamp(Car.Steer+steerInput*1.0*SteeringSensitivity*delta,-CarSpec.MaxSteer,CarSpec.MaxSteer);
                 else Car.Steer=Mathf.MoveToward((float)Car.Steer,(float)(steerInput*CarSpec.MaxSteer),dt*SteeringSensitivity*.95f);
-                if(Input.IsPhysicalKeyPressed(Key.Z)||(selectedController>=0&&Input.IsJoyButtonPressed(selectedController,JoyButton.LeftStick))) Car.Steer=Mathf.MoveToward((float)Car.Steer,0,dt);
+                if(Input.IsPhysicalKeyPressed(Key.Z)||PadHeld(JoyButton.LeftStick)) Car.Steer=Mathf.MoveToward((float)Car.Steer,0,dt);
                 Car.SetSpeed(delta,Gas,Brake);
                 if(!Car.Move(delta,Scene.Obstacles)) {ContactFlash=.6;Message("Contact. Stop, check the clearance, and correct.");}
                 Elapsed+=delta;
                 if(Scene.PositionError(Car.Pose)<.23 && DrivingModel.AngleError(Car.Pose.Yaw,Scene.Goal.Yaw)<.05 && Math.Abs(Car.Speed)<.025)
                     successTime+=delta;
                 else successTime=0;
+                CheckInspection();
             }
-            LookYaw-=Dead(Axis(JoyAxis.RightX))*dt*1.9f;
-            LookPitch=Mathf.Clamp(LookPitch-Dead(Axis(JoyAxis.RightY))*dt*1.35f,-.65f,.55f);
-            if(Input.IsPhysicalKeyPressed(Key.Left)) LookYaw+=dt*1.8f;
-            if(Input.IsPhysicalKeyPressed(Key.Right)) LookYaw-=dt*1.8f;
-            if(Input.IsPhysicalKeyPressed(Key.Up)) LookPitch=Mathf.Min(.55f,LookPitch+dt);
-            if(Input.IsPhysicalKeyPressed(Key.Down)) LookPitch=Mathf.Max(-.65f,LookPitch-dt);
+            if(!Inspection)
+            {
+                LookYaw-=Dead(Axis(JoyAxis.RightX))*dt*1.9f;
+                LookPitch=Mathf.Clamp(LookPitch-Dead(Axis(JoyAxis.RightY))*dt*1.35f,-.65f,.55f);
+            }
         }
         ApplyPose();
         for(int i=0;i<3;i++) {FrontSectors[i]=Car.Sensor(Scene.Obstacles,true,i-1);RearSectors[i]=Car.Sensor(Scene.Obstacles,false,i-1);}
@@ -175,12 +193,12 @@ public partial class ParkingGame : Node3D
     internal void StartDemo()
     {
         Car=new DrivingModel{Pose=Scene.Spawn,Gear=Scene.Exercise==Exercise.ForwardBay?Gear.D:Gear.R,ParkingBrake=false};
-        demoStep=1;demoCarry=0;Demo=true;Paused=false;Tutor=true;menu.Hide();
+        demoStep=1;demoCarry=0;Demo=true;Inspection=false;inspectionAcknowledged=false;Paused=false;Tutor=true;menu.Hide();
         UpdateMouseCapture();
     }
     void RunDemo(double dt)
     {
-        if(demoStep>=Scene.Path.Count) {Demo=false;Car.Speed=0;Car.ParkingBrake=true;Message("Demonstration complete. Retry to practise it yourself.");return;}
+        if(demoStep>=Scene.Path.Count) {Demo=false;Car.Speed=0;Car.Gear=Gear.P;Car.ParkingBrake=true;BeginInspection();Message("Demonstration complete. Inspect the parking position.");return;}
         var step=Scene.Path[demoStep];
         Car.Steer=Mathf.MoveToward((float)Car.Steer,(float)step.Steering,(float)dt*.9f);
         if(Math.Abs(Car.Steer-step.Steering)>.01) {Car.Speed=0;return;}
@@ -216,6 +234,7 @@ public partial class ParkingGame : Node3D
     public override async void _Process(double delta)
     {
         frames++;
+        UpdateControllerCheck();
         if(autoCapture && captureView=="input") menu.GetChild<ScrollContainer>(0).ScrollVertical=10000;
         if(autoCapture && !captureTaken && frames>=100 && Time.GetTicksMsec()-captureStarted>2500)
         {

@@ -85,7 +85,7 @@ public partial class ParkingGame
         Button(pedalRow,"Bind L2 brake",()=>BeginPedalBinding(BrakeAction));
         Button(pedalRow,"Bind R2 gas",()=>BeginPedalBinding(GasAction));
         Button(pedalRow,"Reset pedals",ResetPedalBindings);
-        var help=Text(mv,"RT gas · LT brake · left stick turn · right stick look\nLB R · RB D · A gear · Y display · X tutor · B console\nD-pad: left/right mirrors · down shoulder · up forward\nKeyboard: W/S pedals · A/D steer · arrows look\n1 P · 2 R · 3 N · 4 D · Space parking brake\nZ centre wheel · C shoulder · V console · Home forward\nTab display · T tutor · Esc pause · F5 retry · F6 new",13);help.AutowrapMode=TextServer.AutowrapMode.WordSmart;
+        var help=Text(mv,"RT gas · LT brake · left stick turn · right stick look\nLB R · RB D · A gear · Y display · X tutor · B console\nD-pad: menus only · right-stick click: parking brake\nKeyboard: W/S pedals · A/D steer · mouse look\n1 P · 2 R · 3 N · 4 D · Space parking brake\nZ centre wheel · C shoulder · V console · Home forward\nTab display · T tutor · Esc pause · F5 retry · F6 new",13);help.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         Text(mv,"Prototype 01 · generic car · uncalibrated sightlines",12,new("66756b"));
         mapRect=Image(hud,mapViewport);mapRect.Position=new(1045,270);mapRect.Size=new(365,350);mapRect.Visible=false;
         SetupCockpitDisplays();
@@ -128,10 +128,12 @@ public partial class ParkingGame
         sensorLabel.Text=string.Format(Tr("FRONT {0}     REAR {1}"),distance(FrontRange),distance(RearRange));
         sensorLabel.Modulate=Math.Min(FrontRange,RearRange)<.3?new Color("ff997a"):Colors.White;
         rearRect.Visible=CameraMode==0;surroundRect.Visible=CameraMode==1;
-        cameraLabel.Text=CameraMode==0?Tr("REAR"):CameraMode==1?Tr("SURROUND"):Tr("PARKING SENSORS");
+        sensorGraphic.SetRanges(FrontSectors,RearSectors);
+        cameraLabel.Text=CameraMode==0?Tr("REAR + SENSORS"):Tr("SURROUND + SENSORS");
         noticeLabel.Text=Notice!=""?Tr(Notice):Demo?Tr("DEMONSTRATION · observe the mirrors"):successTime>.8?Tr("Position looks good. Select P and apply the parking brake."):"";
-        if(successTime>.8 && Car.Gear==Gear.P && Car.ParkingBrake) noticeLabel.Text=Tr("PARKED. Take your time, or try a new variation.");
-        tutorPanel.Visible=Tutor&&!Paused;
+        if(Inspection) noticeLabel.Text=Tr("PARKING INSPECTION · mouse / right stick to orbit\nMouse wheel to zoom · B / Enter to return to cockpit");
+        if(!Inspection && successTime>.8 && Car.Gear==Gear.P && Car.ParkingBrake) noticeLabel.Text=Tr("PARKED. Take your time, or try a new variation.");
+        tutorPanel.Visible=Tutor&&!Paused&&!Inspection;
         int index=Scene.ClosestPath(Car.Pose);double progress=(double)index/Math.Max(1,Scene.Path.Count-1);
         if(progress<.08)
         {
