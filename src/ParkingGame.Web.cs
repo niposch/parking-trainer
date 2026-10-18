@@ -73,6 +73,7 @@ public partial class ParkingGame
             Check(Car.Pose==pose && Car.Travel==distance,"Inspection freezes driving");
             passed+=await CheckDemoSmoothness();
             passed+=await CheckTouchControls();
+            passed+=await CheckParkingAssist();
             NewScenario(false);Pause(false);Tutor=false;
             for(int view=0;view<2;view++)
             {

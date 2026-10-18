@@ -14,6 +14,7 @@ internal partial class TouchControls : Control
     public bool Inspecting {get;private set;}
     public Gear Gear;
     public bool ParkingBrake;
+    public bool Fullscreen;
     public Rect2 HintHeader;
     readonly Dictionary<int,(string Target,Vector2 Position)> pointers=new();
     readonly Dictionary<string,Rect2> regions=new();
@@ -35,31 +36,11 @@ internal partial class TouchControls : Control
     public void ReleaseAll() {pointers.Clear();Gas=Brake=Steering=0;QueueRedraw();}
     void Layout()
     {
-        var scale=GetViewport().GetScreenTransform().Scale.Abs();unit=1/Mathf.Max(.01f,Mathf.Min(scale.X,scale.Y));
+        unit=InterfaceLayout.Unit(GetViewport());
         var size=GetViewport().GetVisibleRect().Size;
         if(laidOutSize==size && Mathf.IsEqualApprox(unit,laidOutUnit) && regions.Count>0 && regions.ContainsKey("return")==Inspecting) return;
         laidOutSize=size;laidOutUnit=unit;regions.Clear();
-        float m=12*unit,g=8*unit,b=46*unit;
-        regions["pause"]=new(size.X-m-b,m,b,b);
-        regions["camera"]=new(size.X-m-b*2-g,m,b,b);
-        regions["tutor"]=new(size.X-m-b*3-g*2,m,b,b);
-        if(Inspecting)
-        {
-            regions["return"]=new(size.X/2-90*unit,size.Y-m-b,180*unit,b);
-            regions["zoom-in"]=new(size.X/2-90*unit-g-b,size.Y-m-b,b,b);
-            regions["zoom-out"]=new(size.X/2+90*unit+g,size.Y-m-b,b,b);
-        }
-        else
-        {
-            float pedalWidth=Mathf.Min(72*unit,(size.X-3*m)*.19f),height=Mathf.Min(130*unit,size.Y*.34f);
-            regions["gas"]=new(size.X-m-pedalWidth,size.Y-m-height,pedalWidth,height);
-            regions["brake"]=new(size.X-m-pedalWidth*2-g,size.Y-m-height,pedalWidth,height);
-            float steerWidth=Mathf.Min(220*unit,size.X-m*3-pedalWidth*2-g);
-            regions["steer"]=new(m,size.Y-m-height,steerWidth,height);
-            float rowWidth=4*b+72*unit+g*4,x=size.X/unit>=620 && size.X>size.Y?size.X-m-rowWidth:(size.X-rowWidth)/2,y=size.Y-m-height-g-b;
-            foreach(string gear in new[]{"P","R","N","D"}) {regions[gear]=new(x,y,b,b);x+=b+g;}
-            regions["parking"]=new(x,y,72*unit,b);
-        }
+        foreach(var pair in InterfaceLayout.TouchRegions(size,unit,Inspecting)) regions.Add(pair.Key,pair.Value);
         foreach(var style in new[]{normal,selected}) {style.CornerRadiusTopLeft=style.CornerRadiusTopRight=style.CornerRadiusBottomLeft=style.CornerRadiusBottomRight=(int)(8*unit);}
         QueueRedraw();
     }
@@ -122,7 +103,7 @@ internal partial class TouchControls : Control
             string name=pair.Key;var rect=pair.Value;
             bool on=name==Gear.ToString() || name=="parking"&&ParkingBrake;
             DrawStyleBox(on?selected:normal,rect);
-            string label=name switch {"pause"=>"Menu","camera"=>"View","tutor"=>"?","parking"=>"P\nBRAKE","steer"=>"<  STEER  >","gas"=>"GAS","brake"=>"BRAKE","return"=>"Return to cockpit","zoom-in"=>"+","zoom-out"=>"-",_=>name};
+            string label=name switch {"pause"=>"Menu","camera"=>"View","tutor"=>"?","fullscreen"=>Fullscreen?"Exit\nfull":"Full\nscreen","parking"=>"P\nBRAKE","steer"=>"<  STEER  >","gas"=>"GAS","brake"=>"BRAKE","return"=>"Return to cockpit","zoom-in"=>"+","zoom-out"=>"-",_=>name};
             if(name is "gas" or "brake")
             {
                 float value=name=="gas"?Gas:Brake;
@@ -135,7 +116,7 @@ internal partial class TouchControls : Control
                 var centre=rect.GetCenter();DrawLine(centre+new Vector2(0,-rect.Size.Y*.28f),centre+new Vector2(0,rect.Size.Y*.28f),new(.6f,.7f,.68f),unit);
                 DrawCircle(centre+new Vector2(-Steering*rect.Size.X*.38f,rect.Size.Y*.23f),8*unit,new("cff59f"));
             }
-            LabelAt(rect,label,name=="parking"?12:14,on?new("14262b"):new Color("f0f0e5"));
+            LabelAt(rect,label,name is "parking" or "fullscreen"?14:16,on?new("14262b"):new Color("f0f0e5"));
         }
     }
 }

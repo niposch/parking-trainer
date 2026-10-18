@@ -36,6 +36,17 @@ public partial class ParkingGame
                     if(Geometry3D.SegmentIntersectsTriangle(from,to,triangles[i],triangles[i+1],triangles[i+2]).VariantType!=Variant.Type.Nil) return true;
                 return false;
             }
+            for(int mirror=0;mirror<3;mirror++)
+            {
+                int clear=0,total=0;
+                for(int x=-2;x<=2;x++) for(int y=-1;y<=1;y++)
+                {
+                    var target=vehicle.ToLocal(mirrorScreens[mirror].ToGlobal(new(x*mirrorSizes[mirror].X*.20f,y*mirrorSizes[mirror].Y*.35f,.014f)));
+                    total++;if(!BodyBlocks(forwardEye,target)) clear++;
+                }
+                GD.Print($"Mirror {mirror}: {clear}/{total} glass sightlines clear");
+                Check(clear==total,$"Mirror {mirror} glass is clear of the body and pillars from the normal eye position");
+            }
             Check(!BodyBlocks(forwardEye,new(-.36f,EyeHeight,-5)),"Forward sightline passes through the windshield");
             Check(!BodyBlocks(sideEye,new(3,EyeHeight,-1.25f)),"90-degree passenger-side sightline passes through the side window");
             Check(!BodyBlocks(backEye,new(backEye.X,backEye.Y,3)),"Leaned rear sightline passes through the rear glass");
@@ -56,6 +67,10 @@ public partial class ParkingGame
             BeeperVolume=0;Sound(.01);Check(!beep.Playing,"Zero beeper volume silences the warning");
             BeeperVolume=1;Paused=true;Car.Gear=Gear.P;FrontRange=RearRange=2;
             Check(MenuPage=="home" && menuPages["home"].Visible && !menuPages["options"].Visible,"Pause opens a focused home page with options in a submenu");
+            // Initial physics catch-up can precede the first container layout.
+            // Navigate only after the pause menu has actually rendered.
+            await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
+            await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.DpadDown,Pressed=true});await PhysicsFrames(3);
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.DpadDown,Pressed=false});
             Check(GetViewport().GuiGetFocusOwner()!=resumeButton,"Controller D-pad navigates pause menu focus");
@@ -168,6 +183,7 @@ public partial class ParkingGame
             await PhysicsFrames(4);
             passed+=await CheckDemoSmoothness();
             passed+=await CheckTouchControls();
+            passed+=await CheckParkingAssist();
             GD.Print($"SMOKE COMPLETE: {passed} runtime input/UI/demonstration checks passed.");GetTree().Quit();
         }
         catch(Exception error) {GD.PushError("SMOKE FAILED: "+error);GetTree().Quit(1);}

@@ -11,7 +11,9 @@ internal partial class ParkingSensors : Control
         bool changed=false;
         for(int i=0;i<6;i++)
         {
-            int level=ProximityLevel(i<3?front[i]:rear[i-3]);
+            double distance=i<3?front[i]:rear[i-3];
+            int level=ProximityLevel(distance);
+            if(level<levels[i] && ProximityLevel(distance-.04)>=levels[i]) level=levels[i];
             changed|=levels[i]!=level;levels[i]=level;
         }
         if(changed) QueueRedraw();
@@ -47,6 +49,11 @@ internal partial class ParkingSensors : Control
                     var ray=Vector2.FromAngle(angle);polygon[k]=origin+ray*outer;polygon[17-k]=origin+ray*inner;
                 }
                 DrawColoredPolygon(polygon,levels[i]>=4-ring?colors[levels[i]]:colors[0]);
+                if(sector!=0)
+                {
+                    var sideRect=new Rect2(P(sector*(58+ring*13)-5,front?-65:4),new Vector2(10,61)*scale);
+                    DrawRect(sideRect,levels[i]>=4-ring?colors[levels[i]]:colors[0]);
+                }
             }
         }
     }

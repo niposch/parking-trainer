@@ -75,6 +75,7 @@ html/custom_html_shell="res://web/shell.html"
 html/canvas_resize_policy=2
 html/focus_canvas_on_start=true
 progressive_web_app/enabled=true
+progressive_web_app/display=0
 progressive_web_app/ensure_cross_origin_isolation_headers=true
 "@ | Set-Content (Join-Path $stage 'export_presets.cfg') -Encoding UTF8
     Push-Location $stage

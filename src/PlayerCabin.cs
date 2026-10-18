@@ -22,6 +22,14 @@ internal static class PlayerCabin
         var outer=new SurfaceTool();var inner=new SurfaceTool();var glass=new SurfaceTool();
         outer.Begin(Mesh.PrimitiveType.Triangles);inner.Begin(Mesh.PrimitiveType.Triangles);glass.Begin(Mesh.PrimitiveType.Triangles);
         var edges=new Dictionary<(Vector3,Vector3),(Vector3 A,Vector3 B,int Count)>();
+        var welded=new List<Vector3>();
+        Vector3 Weld(Vector3 p)
+        {
+            // Imported glTF compression moves duplicate attachment vertices by
+            // tens of microns. Join those copies before making the inner shell.
+            foreach(var q in welded) if(q.DistanceSquaredTo(p)<.00000004f) return q;
+            welded.Add(p);return p;
+        }
         // An affine inset preserves collinearity at the source mesh's T-junctions
         // and at clipped window edges. A normalized radial offset opens pixel gaps.
         Vector3 Lining(Vector3 p)=>p.Lerp(new Vector3(0,.60f,-1.1f),.022f);
@@ -45,12 +53,19 @@ internal static class PlayerCabin
             result.Z=p.Z>=.66f?Mathf.Lerp(-(float)CarSpec.Wheelbase,-(float)CarSpec.Front,(p.Z-.66f)/.59f)
                 :p.Z>=-.66f?Mathf.Lerp(0,-(float)CarSpec.Wheelbase,(p.Z+.66f)/1.32f)
                 :Mathf.Lerp(0,(float)CarSpec.Rear,(-p.Z-.66f)/.64f);
-            return result;
+            return Weld(result);
         }
         void Emit(SurfaceTool tool,List<(Vector3 P,Vector2 U)> polygon,bool reverse=false,bool lining=false)
         {
             for(int j=1;j+1<polygon.Count;j++) foreach(int k in reverse?new[]{0,j+1,j}:new[]{0,j,j+1})
             {var v=polygon[k];tool.SetUV(v.U);tool.AddVertex(inverse*(lining?Lining(v.P):v.P));}
+        }
+        (Vector3,Vector3) EdgeKey(Vector3 a,Vector3 b)
+        {
+            Vector3 Key(Vector3 p)=>new(Mathf.Snapped(p.X,.0001f),Mathf.Snapped(p.Y,.0001f),Mathf.Snapped(p.Z,.0001f));
+            var ka=Key(a);var kb=Key(b);
+            bool swap=ka.X>kb.X || ka.X==kb.X&&(ka.Y>kb.Y || ka.Y==kb.Y&&ka.Z>kb.Z);
+            return swap?(kb,ka):(ka,kb);
         }
         void Solid(List<(Vector3 P,Vector2 U)> polygon)
         {
@@ -59,10 +74,7 @@ internal static class PlayerCabin
             for(int i=0;i<polygon.Count;i++)
             {
                 var a=polygon[i].P;var b=polygon[(i+1)%polygon.Count].P;
-                Vector3 Key(Vector3 p)=>new(Mathf.Snapped(p.X,.0001f),Mathf.Snapped(p.Y,.0001f),Mathf.Snapped(p.Z,.0001f));
-                var ka=Key(a);var kb=Key(b);
-                bool swap=ka.X>kb.X || ka.X==kb.X&&(ka.Y>kb.Y || ka.Y==kb.Y&&ka.Z>kb.Z);
-                var key=swap?(kb,ka):(ka,kb);
+                var key=EdgeKey(a,b);
                 if(edges.TryGetValue(key,out var e)) edges[key]=(e.A,e.B,e.Count+1);else edges[key]=(a,b,1);
             }
         }
@@ -81,7 +93,7 @@ internal static class PlayerCabin
             }
             return result;
         }
-        StandardMaterial3D? paint=null;Vector2 doorPaintUv=Vector2.Zero;bool foundPaint=false;
+        StandardMaterial3D? paint=null;Vector2 doorPaintUv=Vector2.Zero;float paintDistance=float.PositiveInfinity;
         for(int surface=0;surface<original.GetSurfaceCount();surface++)
         {
             var arrays=original.SurfaceGetArrays(surface);var points=arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
@@ -95,7 +107,12 @@ internal static class PlayerCabin
                 var poly=new List<(Vector3 P,Vector2 U)>();foreach(int k in new[]{indices[i],indices[i+1],indices[i+2]}) poly.Add((Shape(points[k]),uv[k]));
                 var centre=(uv[indices[i]]+uv[indices[i+1]]+uv[indices[i+2]])/3;
                 var c=texture?.GetPixel(Math.Clamp((int)(centre.X*texture.GetWidth()),0,texture.GetWidth()-1),Math.Clamp((int)(centre.Y*texture.GetHeight()),0,texture.GetHeight()-1))??Colors.White;
-                if(!foundPaint && c.R>.75f && c.G>.25f && c.G<.55f && c.B<.40f) {doorPaintUv=centre;foundPaint=true;}
+                if(c.R>.75f && c.G>.25f && c.G<.55f && c.B<.40f)
+                {
+                    var sourceCentre=(points[indices[i]]+points[indices[i+1]]+points[indices[i+2]])/3;sourceCentre.X=Math.Abs(sourceCentre.X);
+                    float distance=sourceCentre.DistanceSquaredTo(new(.55f,.60f,.3979022f));
+                    if(distance<paintDistance) {doorPaintUv=centre;paintDistance=distance;}
+                }
                 bool window=points[indices[i]].Y>.64f && points[indices[i+1]].Y>.64f && points[indices[i+2]].Y>.64f && c.B>c.R*1.04f && c.G>.64f && c.R>.48f;
                 if(window) {Emit(glass,poly);continue;}
                 var n=(poly[1].P-poly[0].P).Cross(poly[2].P-poly[0].P).Normalized();
@@ -122,8 +139,32 @@ internal static class PlayerCabin
                 (Shape(new(side*.55f,.65f,.3479022f)),doorPaintUv) };
             if(side<0) cap.Reverse();Solid(cap);
         }
-        // Return faces join the inner liner to every open window edge.
-        foreach(var e in edges.Values.Where(e=>e.Count==1))
+        // Split at shared collinear vertices before detecting open boundaries.
+        // Source T-junctions and the filled mirror opening are internal seams,
+        // not window edges: extruding them made the door patch look jagged.
+        var open=edges.Values.Where(e=>e.Count==1).ToArray();
+        var joins=open.SelectMany(e=>new[]{e.A,e.B}).Distinct().ToArray();
+        var boundaries=new Dictionary<(Vector3,Vector3),(Vector3 A,Vector3 B,int Count)>();
+        foreach(var edge in open)
+        {
+            var d=edge.B-edge.A;float length=d.LengthSquared();if(length<1e-10f) continue;
+            var cuts=new List<float>{0,1};
+            foreach(var point in joins)
+            {
+                float t=(point-edge.A).Dot(d)/length;
+                if(t>.00001f && t<.99999f && (edge.A+d*t).DistanceSquaredTo(point)<.00000004f) cuts.Add(t);
+            }
+            cuts.Sort();
+            for(int i=1;i<cuts.Count;i++)
+            {
+                if(cuts[i]-cuts[i-1]<.00001f) continue;
+                var a=edge.A+d*cuts[i-1];var b=edge.A+d*cuts[i];var key=EdgeKey(a,b);
+                if(boundaries.TryGetValue(key,out var other)) boundaries[key]=(other.A,other.B,other.Count+1);
+                else boundaries[key]=(a,b,1);
+            }
+        }
+        // Return faces join the inner liner only at actual open window edges.
+        foreach(var e in boundaries.Values.Where(e=>e.Count==1))
             foreach(var p in new[]{e.A,e.B,Lining(e.B),e.A,Lining(e.B),Lining(e.A)}) inner.AddVertex(inverse*p);
         // The source atlas material is double-sided. Its orange back faces must
         // not show through the dark lining along rasterized triangle boundaries.

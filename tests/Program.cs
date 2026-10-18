@@ -1,6 +1,7 @@
 using ParkingTrainer;
 int checks=0;
 void Check(bool value,string name) { if(!value) throw new Exception(name); checks++; }
+if(args.Contains("--proximity")) {ProximityChecks.Run(Check);Console.WriteLine($"PASS: {checks:N0} proximity checks.");return;}
 foreach(var gear in new[]{Gear.D,Gear.R})
 {
     var m=new DrivingModel{Gear=gear,ParkingBrake=false};
@@ -65,9 +66,9 @@ Check(car.Sensor(new[]{obstacle},true,0)<.6,"Sensor measures from front bumper")
 var sectorCar=new DrivingModel();
 var frontLeft=new[]{new Obstacle(new(-.95,-4.45,.3,.3,0),"front-left")};
 var rearLeft=new[]{new Obstacle(new(-.95,1.80,.3,.3,0),"rear-left")};
-Check(sectorCar.Sensor(frontLeft,true,-1)<1.3,"Front left sensor fans outward toward front-left obstacle");
+Check(sectorCar.Sensor(frontLeft,true,-1)<1.3,"Front left protection covers front-left obstacle");
 Check(sectorCar.Sensor(frontLeft,true,1)==2,"Front right sensor does not report an obstacle on the opposite side");
-Check(sectorCar.Sensor(rearLeft,false,-1)<1.3,"Rear left sensor fans outward toward rear-left obstacle");
+Check(sectorCar.Sensor(rearLeft,false,-1)<1.3,"Rear left protection covers rear-left obstacle");
 Check(sectorCar.Sensor(rearLeft,false,1)==2,"Rear right sensor does not report an obstacle on the opposite side");
 var curb=new Obstacle(new(0,1.10,1.8,.20,0),"curb",.15,true);
 Check(sectorCar.Sensor(new[]{curb},false,0)==2,"Low sidewalk does not appear on parking sensors");
@@ -77,4 +78,5 @@ car.Move(1,new[]{obstacle});
 Check(car.Contacts==1 && !DrivingModel.Collides(car.Pose,new[]{obstacle}),"Swept collision stops without tunnelling");
 Check(new Footprint(0,0,2,4,.4).Overlaps(new(0,0,2,4,-.3)),"Rotated SAT overlap");
 Check(!new Footprint(0,0,2,4,.4).Overlaps(new(20,0,2,4,-.3)),"Separated SAT boxes");
+ProximityChecks.Run(Check);
 Console.WriteLine($"PASS: {checks:N0} checks, including 1,500 procedural feasibility traces.");

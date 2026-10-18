@@ -24,6 +24,7 @@ public static class CarSpec
 {
     public const double Wheelbase = 2.65, Width = 1.80, Length = 4.45;
     public const double Rear = 0.90, Front = 3.55, CentreZ = -1.325;
+    public const double MirrorX=.99, MirrorZ=-1.85, MirrorWidth=.24, MirrorLength=.26;
     public const double MaxSteer = 0.60, Creep = 0.92;
 }
 
@@ -75,7 +76,7 @@ public sealed class DrivingModel
     public int Contacts;
     public double Travel;
     public static Footprint Body(Pose p) { var c=p.Point(0,CarSpec.CentreZ); return new(c.X,c.Z,CarSpec.Width,CarSpec.Length,p.Yaw); }
-    public static Footprint Mirror(Pose p, int side) { var c=p.Point(side*.99,-2.05); return new(c.X,c.Z,.20,.26,p.Yaw); }
+    public static Footprint Mirror(Pose p, int side) { var c=p.Point(side*CarSpec.MirrorX,CarSpec.MirrorZ); return new(c.X,c.Z,CarSpec.MirrorWidth,CarSpec.MirrorLength,p.Yaw); }
     public static bool Collides(Pose p, IReadOnlyList<Obstacle> obstacles, double margin=0)
     {
         foreach(var o in obstacles)
@@ -114,16 +115,6 @@ public sealed class DrivingModel
         return true;
     }
     public double Sensor(IReadOnlyList<Obstacle> obstacles,bool front,int sector,double range=2.0)
-    {
-        var origin=Pose.Point(sector*.64,front?-CarSpec.Front-.025:CarSpec.Rear+.025);
-        double nearest=range;
-        for(int i=-3;i<=3;i++)
-        {
-            double angle=Pose.Yaw+(front?0:System.Math.PI)+sector*(front?-.35:.35)+i*.105;
-            foreach(var o in obstacles)
-                if(!o.Curb) nearest=System.Math.Min(nearest,o.Shape.RayDistance(origin.X,origin.Z,-System.Math.Sin(angle),-System.Math.Cos(angle),range));
-        }
-        return nearest;
-    }
+        =>ParkingProximity.Measure(Pose,obstacles,front,sector,range);
     public static double AngleError(double a,double b) => System.Math.Abs(System.Math.Atan2(System.Math.Sin(a-b),System.Math.Cos(a-b)));
 }

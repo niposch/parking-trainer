@@ -89,7 +89,7 @@ public partial class ParkingGame
     {
         if(!IsInstanceValid(hud)) return;
         var size=GetViewport().GetVisibleRect().Size;
-        float unit=1/Mathf.Max(.01f,GetViewport().GetScreenTransform().Scale.X);
+        float unit=InterfaceLayout.Unit(GetViewport());
         var pixels=size/unit;
         hud.Scale=Vector2.One;
         var menuSize=new Vector2(Mathf.Min(860,pixels.X-24),Mathf.Min(700,pixels.Y-24));
@@ -100,7 +100,7 @@ public partial class ParkingGame
         menuTitle.AddThemeFontSizeOverride("font_size",narrow?22:28);
         float tutorWidth=TouchEnabled&&pixels.X>=620&&pixels.X>pixels.Y&&pixels.Y<520?pixels.X-320:pixels.X-24;
         float tutorScale=unit*Mathf.Min(1,tutorWidth/370);
-        tutorPanel.Scale=Vector2.One*tutorScale;tutorPanel.Position=new(12*unit,(TouchEnabled&&pixels.X<620?70:12)*unit);
+        tutorPanel.Scale=Vector2.One*tutorScale;tutorPanel.Position=new(12*unit,(TouchEnabled?88:12)*unit);
         hintIcon.Scale=Vector2.One*unit;hintIcon.Position=new(12*unit,12*unit);
         noticeLabel.Scale=Vector2.One*unit;
         noticeLabel.Size=new(Mathf.Min(520,pixels.X-24),70);
@@ -136,7 +136,7 @@ public partial class ParkingGame
             // Containers may lower their minimum size a frame after reflow.
             // Reapply the fit once that deferred layout has completed.
             var size=GetViewport().GetVisibleRect().Size;
-            float unit=1/Mathf.Max(.01f,GetViewport().GetScreenTransform().Scale.X);
+            float unit=InterfaceLayout.Unit(GetViewport());
             menu.Size=new(Mathf.Min(860,size.X/unit-24),Mathf.Min(700,size.Y/unit-24));
             menu.Position=(size-menu.Size*unit)/2;
         }

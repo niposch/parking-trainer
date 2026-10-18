@@ -209,3 +209,11 @@ Sources accessed 18 October 2026. Manufacturer manuals describe example equipmen
 Collapsed tutoring must occupy only one hint icon, without a phase-title banner. Publish source to `niposch/parking-trainer` and the browser game through GitHub Pages at `https://niposch.de/parking-trainer/`; inherit the existing user-site domain without DNS changes. Make the game discoverable from the homepage’s centralized Live projects directory.
 
 Demonstration playback must advance continuously through path segments on rendered frames, synchronize the camera views and vehicle, and preserve speed, steering/gear pauses and path geometry across frame rates. Avoid whole-waypoint pose jumps or fixed-rate visible playback.
+
+
+## Continuous proximity, mirror mounting and phone usability — 18 October 2026
+
+- Cover the complete body sides, front/rear corners and mirror envelope without gaps between sampled rays. Keep independent stepped front/centre/outer warnings, add lateral bars, and drive audio from the same clearance values. Preserve curb exclusion and physical curb collisions. This prototype models idealized fused lateral protection rather than a particular manufacturer's ultrasonic hardware.
+- Position all mirror glass clear of the pillars/header. Attach holders behind their housings with no gaps or geometry passing through the reflector. Clip reflection rendering at the mirror plane and preserve the glass aspect ratio. Keep the repaired door lining flush, without attachment slivers or mismatched patches.
+- Size browser touch controls and menus in CSS screen units, accounting for device pixel ratio. Give controls generous touch targets and check dense phone screens, portrait and landscape. Keep independent realistic pedals and gear selection.
+- Expose fullscreen directly on the touch toolbar, through an actual pressed-input callback. Let it exit fullscreen too; retain the Options display selector. Installed PWA mode should request fullscreen. Fill available browser space as its chrome changes size.

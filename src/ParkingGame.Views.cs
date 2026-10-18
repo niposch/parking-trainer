@@ -25,7 +25,7 @@ public partial class ParkingGame
         eye=new Camera3D {Current=true,Near=.035f,Far=75,Fov=Fov,CullMask=27};vehicle.AddChild(eye);
         inspectionCamera=new Camera3D {Near=.08f,Far=75,Fov=60,CullMask=43};vehicle.AddChild(inspectionCamera);
         rearViewport=View(720,420,out rearCamera,39);rearCamera.KeepAspect=Camera3D.KeepAspectEnum.Width;rearCamera.Fov=112;
-        for(int i=0;i<3;i++) {mirrorViewports[i]=View(i==1?420:360,i==1?170:210,out mirrorCameras[i]);}
+        for(int i=0;i<3;i++) {mirrorViewports[i]=View(i==1?500:352,i==1?170:216,out mirrorCameras[i]);}
         for(int i=0;i<4;i++) {surroundSources[i]=View(380,380,out surroundCameras[i]);surroundCameras[i].Fov=150;}
         mapViewport=View(700,580,out mapCamera,35);mapCamera.Projection=Camera3D.ProjectionType.Orthogonal;mapCamera.Size=25;
         mapCamera.Position=new(1,28,0);mapCamera.RotationDegrees=new(-90,0,0);
@@ -93,17 +93,20 @@ void fragment(){
         for(int i=0;i<3;i++)
         {
             var centre=mirrorCentres[i];var toEye=(PlayerCabin.EyeTarget(0,EyeHeight)-centre).Normalized();
-            var rearward=new Vector3(i==0?-.26f:i==2?.26f:0,0,1).Normalized();
+            var rearward=new Vector3(i==0?-.26f:i==2?.26f:0,i==1?-.06f:-.03f,1).Normalized();
             var normal=(toEye+rearward).Normalized();
-            if(mirrorScreens[i]!=null) mirrorScreens[i].LookAt(vehicle.ToGlobal(centre+normal),vehicle.GlobalBasis.Y,true);
+            if(mirrorScreens[i]!=null) mirrorScreens[i].Basis=Basis.LookingAt(normal,Vector3.Up,true);
+            UpdateMirrorMount(i);
             var reflected=eye.Position-2*normal*(eye.Position-centre).Dot(normal);
             var cam=mirrorCameras[i];
             cam.GlobalPosition=vehicle.ToGlobal(reflected);
             var n=vehicle.GlobalBasis*normal;
             cam.LookAt(cam.GlobalPosition+n,Vector3.Up);
             var local=cam.GlobalTransform.AffineInverse()*vehicle.ToGlobal(centre);
-            float distance=Mathf.Max(.1f,-local.Z),near=.045f;
-            float height=i==1?.085f:.145f;
+            float distance=Mathf.Max(.1f,-local.Z),near=distance+.002f;
+            // The virtual eye can lie inside the body. Start rendering at the
+            // mirror plane so intervening door/roof geometry cannot cover it.
+            float height=mirrorSizes[i].Y;
             cam.KeepAspect=Camera3D.KeepAspectEnum.Height;
             cam.SetFrustum(height*near/distance*(i==1?1:1.7f),new Vector2(local.X,local.Y)*near/distance,near,65);
         }

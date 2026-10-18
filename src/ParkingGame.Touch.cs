@@ -27,11 +27,22 @@ public partial class ParkingGame
     }
     void RefreshTouchControls()
     {
-        if(IsInstanceValid(touchControls)) touchControls.Configure(TouchEnabled,Paused,Inspection,Car.Gear,Car.ParkingBrake);
+        if(IsInstanceValid(touchControls))
+        {
+            bool full=DisplayServer.WindowGetMode()!=DisplayServer.WindowMode.Windowed;
+            if(touchControls.Fullscreen!=full) {touchControls.Fullscreen=full;touchControls.QueueRedraw();}
+            touchControls.Configure(TouchEnabled,Paused,Inspection,Car.Gear,Car.ParkingBrake);
+        }
         if(IsInstanceValid(touchSelector)) touchSelector.Select(TouchMode);
     }
     void TouchCommand(string command)
     {
+        if(command=="fullscreen")
+        {
+            // Called directly by the pressed touch/mouse input callback, as browsers require.
+            ApplyWindowMode(DisplayServer.WindowGetMode()==DisplayServer.WindowMode.Windowed?1:0);
+            return;
+        }
         if(command=="pause") {Pause(true);return;}
         if(command=="camera") {CameraMode=(CameraMode+1)%2;SaveSettings();return;}
         if(command=="tutor") {ToggleHint();return;}
@@ -48,6 +59,15 @@ public partial class ParkingGame
         Vector2 Point(string control,float x=.5f,float y=.5f) {var rect=touchControls.Region(control);return rect.Position+rect.Size*new Vector2(x,y);}
         try
         {
+            foreach(var css in new[]{new Vector2(320,568),new Vector2(390,844),new Vector2(844,390),new Vector2(915,320)})
+            foreach(float density in new[]{1f,2f,3f})
+            {
+                var regions=InterfaceLayout.TouchRegions(css*density,density,false);
+                Check(regions.Values.All(r=>r.Size.X/density>=48 && r.Size.Y/density>=48),$"Touch targets stay at least 48 CSS pixels at {css}, density {density}");
+                Check(regions.Values.All(r=>r.Position.X>=0 && r.Position.Y>=0 && r.End.X<=css.X*density && r.End.Y<=css.Y*density),"Mobile controls remain within the visible window");
+                var list=regions.Values.ToArray();
+                Check(!list.Where((a,i)=>list.Skip(i+1).Any(b=>a.Intersects(b))).Any(),"Driving controls do not overlap in portrait or landscape");
+            }
             if(DisplayServer.GetName()=="headless") {GetWindow().Size=new(1280,800);await PhysicsFrames(3);LayoutHud();}
             NewScenario(false);Pause(false);
             Tutor=true;HintCollapsed=false;ApplyHintLayout();UpdateHud();
@@ -58,6 +78,14 @@ public partial class ParkingGame
             Input.ActionRelease(GasAction);Input.ActionRelease(BrakeAction);
             NewScenario(false);SetTouchMode(1);Pause(false);
             Check(touchControls.Active && !CaptureDrivingMouse,"Manual On enables pointer controls without mouse capture");
+            Check(touchControls.Region("fullscreen").Size.X/InterfaceLayout.Unit(GetViewport())>=48,"Fullscreen is accessible from the touch toolbar");
+            if(!IsWeb && DisplayServer.GetName()!="headless")
+            {
+                touchControls.Pointer(8,Point("fullscreen"),true);await PhysicsFrames(6);
+                Check(DisplayServer.WindowGetMode()==DisplayServer.WindowMode.Fullscreen,"Touch fullscreen button enters borderless fullscreen");
+                touchControls.Pointer(8,Point("fullscreen"),true);await PhysicsFrames(6);
+                Check(DisplayServer.WindowGetMode()==DisplayServer.WindowMode.Windowed,"Touch fullscreen button returns to the window");
+            }
             touchControls.Pointer(0,Point("brake",.5f,.25f),true);
             touchControls.Pointer(1,Point("gas",.5f,.75f),true);
             touchControls.Pointer(2,Point("steer",.1f),true);

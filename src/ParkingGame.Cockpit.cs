@@ -4,8 +4,10 @@ namespace ParkingTrainer;
 public partial class ParkingGame
 {
     Node3D[] mirrorScreens=new Node3D[3];
+    MeshInstance3D?[] mirrorArms=new MeshInstance3D?[3];
     ParkingSensors sensorGraphic=null!;
-    readonly Vector3[] mirrorCentres={new(-1.04f,1.04f,-2.05f),new(-.10f,1.37f,-1.72f),new(1.04f,1.04f,-2.05f)};
+    readonly Vector3[] mirrorCentres={new(-(float)CarSpec.MirrorX,1.055f,(float)CarSpec.MirrorZ),new(0,1.30f,-1.90f),new((float)CarSpec.MirrorX,1.055f,(float)CarSpec.MirrorZ)};
+    readonly Vector2[] mirrorSizes={new(.22f,.135f),new(.25f,.085f),new(.22f,.135f)};
     SubViewport FlatDisplay(int width,int height,out Control canvas)
     {
         var view=new SubViewport {Size=new(width,height),Disable3D=true,RenderTargetUpdateMode=SubViewport.UpdateMode.Always};AddChild(view);
@@ -15,11 +17,13 @@ public partial class ParkingGame
     Node3D Screen(Vector3 position,Vector2 size,Texture2D texture,bool flip=false)
     {
         var mount=new Node3D {Position=position};vehicle.AddChild(mount);
-        WorldFactory.Box(mount,Vector3.Zero,new(size.X+.032f,size.Y+.032f,.035f),new("202a2d")).Layers=flip?8u:2u;
+        float border=flip?.014f:.032f,depth=flip?.020f:.035f;
+        var frame=WorldFactory.Box(mount,Vector3.Zero,new(size.X+border,size.Y+border,depth),new("202a2d"));
+        frame.Layers=flip?8u:2u;if(flip) frame.CastShadow=GeometryInstance3D.ShadowCastingSetting.Off;
         var material=new StandardMaterial3D {AlbedoTexture=texture,AlbedoColor=Colors.White,
             ShadingMode=BaseMaterial3D.ShadingModeEnum.Unshaded,CullMode=BaseMaterial3D.CullModeEnum.Disabled,TextureFilter=BaseMaterial3D.TextureFilterEnum.Linear};
         if(flip) {material.Uv1Scale=new(-1,1,1);material.Uv1Offset=new(1,0,0);}
-        var glass=new MeshInstance3D {Mesh=new QuadMesh {Size=size},MaterialOverride=material,Position=new(0,0,.020f),Layers=16,
+        var glass=new MeshInstance3D {Mesh=new QuadMesh {Size=size},MaterialOverride=material,Position=new(0,0,depth/2+.0025f),Layers=16,
             CastShadow=GeometryInstance3D.ShadowCastingSetting.Off};mount.AddChild(glass);
         return mount;
     }
@@ -45,8 +49,24 @@ public partial class ParkingGame
         var media=Screen(new(.08f,.78f,-1.93f),new(.34f,.227f),display.GetTexture());media.Rotation=new(-.13f,-.20f,0);
         // Physical mirror glass is visible only to the driver's camera. Reflection
         // cameras omit the glass layer to prevent recursive render feedback.
-        for(int i=0;i<3;i++) mirrorScreens[i]=Screen(mirrorCentres[i],i==1?new(.25f,.085f):new(.26f,.15f),mirrorViewports[i].GetTexture(),true);
-        WorldFactory.Box(vehicle,new(-.10f,1.46f,-1.72f),new(.025f,.10f,.035f),new("202a2d")).Layers=8;
-        foreach(float x in new[]{-.90f,.90f}) WorldFactory.Box(vehicle,new(x,.94f,-2.09f),new(.18f,.035f,.04f),new("202a2d")).Layers=8;
+        for(int i=0;i<3;i++) mirrorScreens[i]=Screen(mirrorCentres[i],mirrorSizes[i],mirrorViewports[i].GetTexture(),true);
+        WorldFactory.Box(vehicle,new(0,1.40f,-1.90f),new(.018f,.14f,.028f),new("202a2d")).Layers=8;
+        foreach(int i in new[]{0,2})
+        {
+            var arm=WorldFactory.Box(vehicle,Vector3.Zero,new(.018f,.018f,.15f),new("202a2d"));
+            arm.Layers=8;arm.CastShadow=GeometryInstance3D.ShadowCastingSetting.Off;
+            mirrorArms[i]=arm;
+        }
+    }
+    void UpdateMirrorMount(int i)
+    {
+        if(mirrorArms[i] is not { } arm) return;
+        var anchor=new Vector3(i==0?-.89f:.89f,.915f,(float)CarSpec.MirrorZ-.10f);
+        // Enter the back of the lower housing; never pass in front of its glass.
+        var attachment=mirrorScreens[i].Transform*new Vector3(0,-.05f,-.008f);
+        arm.Position=(anchor+attachment)/2;
+        var mesh=(BoxMesh)arm.Mesh;float length=anchor.DistanceTo(attachment);
+        if(Math.Abs(mesh.Size.Z-length)>.00001f) mesh.Size=new(.018f,.018f,length);
+        arm.Basis=Basis.LookingAt(attachment-anchor,Vector3.Up);
     }
 }
