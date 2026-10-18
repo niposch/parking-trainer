@@ -165,6 +165,12 @@ Use C# for the simulation, generator, and tutor; keep their logic separate from 
 - Provide Windowed, Borderless fullscreen and Fullscreen modes; restore decorated window size/position when returning to Windowed and persist the choice.
 - Tutor and demonstrations include the approach and stopped gear changes, preserving realistic separate throttle/brake operation.
 
+## Mirrored bays, door repair and sensor audio - 18 October 2026
+
+- Reverse and forward 90-degree parking must support bays on either side of the approach. Reflect the complete obstacle/goal/setup/approach layout and reference steering; keep the driver's cockpit left-hand-drive. Expose Left/Right beside difficulty, reflect the schematics, preserve draft/cancel behavior and persist the choice.
+- Close the former toy-mirror attachment opening in each door using joined exterior and interior surfaces. Remove the recessed waist beneath the widened cabin so the door skin is flush with the fender plane. Preserve the physical 1.80 m body width and real window openings.
+- Reduce the sharp pitch of distance warnings while keeping their original loudness and repetition timing, per the user's clarification. Keep a stable continuous warning near 0.30 m; retain mute and the optional saved volume adjustment.
+
 ## Sources
 
 Sources accessed 18 October 2026. Manufacturer manuals describe example equipment, not confirmed specifications of the learner's car. Asset listing claims are not import or dimensional validation.

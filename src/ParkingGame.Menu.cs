@@ -5,6 +5,10 @@ public partial class ParkingGame
 {
     internal string MenuPage="home";
     internal Exercise SelectedExercise;
+    internal bool MirrorBay,SelectedMirrorBay;
+    readonly Button[] baySideButtons=new Button[2];
+    readonly ParkingDiagram[] parkingDiagrams=new ParkingDiagram[3];
+    VBoxContainer baySideChoices=null!;
     internal Difficulty Difficulty=Difficulty.Standard,SelectedDifficulty=Difficulty.Standard;
     internal int DisplayMode;
     internal OptionButton displaySelector=null!;
@@ -54,16 +58,27 @@ public partial class ParkingGame
             card.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;card.CustomMinimumSize=new(250,200);exerciseCards[(int)exercise]=card;
             var contents=new VBoxContainer {Position=new(12,10),MouseFilter=Control.MouseFilterEnum.Ignore};card.AddChild(contents);
             contents.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);contents.OffsetLeft=12;contents.OffsetRight=-12;contents.OffsetTop=8;contents.OffsetBottom=-8;
-            contents.AddChild(new ParkingDiagram {Exercise=exercise,CustomMinimumSize=new(220,130),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill});
+            var diagram=new ParkingDiagram {Exercise=exercise,CustomMinimumSize=new(220,130),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};
+            contents.AddChild(diagram);parkingDiagrams[(int)exercise]=diagram;
             var title=Text(contents,ExerciseTitle(exercise),17);title.HorizontalAlignment=HorizontalAlignment.Center;
             var note=Text(contents,exercise==Exercise.ForwardBay?"Drive into the bay":"Reverse into the space",13,new("52675f"));note.HorizontalAlignment=HorizontalAlignment.Center;
         }
-        Text(scenarios,"SPACE DIFFICULTY",13,new("52675f"));
-        var difficulties=new HBoxContainer();difficulties.AddThemeConstantOverride("separation",12);scenarios.AddChild(difficulties);
+        var choices=new HBoxContainer();choices.AddThemeConstantOverride("separation",20);scenarios.AddChild(choices);
+        var difficultyChoices=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill,SizeFlagsStretchRatio=2};choices.AddChild(difficultyChoices);
+        Text(difficultyChoices,"SPACE DIFFICULTY",13,new("52675f"));
+        var difficulties=new HBoxContainer();difficulties.AddThemeConstantOverride("separation",12);difficultyChoices.AddChild(difficulties);
         foreach(Difficulty difficulty in Enum.GetValues<Difficulty>())
         {
             var button=Button(difficulties,DifficultyTitle(difficulty),()=>{SelectedDifficulty=difficulty;RefreshScenarioSelection();});
             button.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;difficultyButtons[(int)difficulty]=button;
+        }
+        baySideChoices=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};choices.AddChild(baySideChoices);
+        Text(baySideChoices,"BAY SIDE",13,new("52675f"));
+        var sides=new HBoxContainer();sides.AddThemeConstantOverride("separation",12);baySideChoices.AddChild(sides);
+        for(int i=0;i<2;i++)
+        {
+            bool mirrored=i==1;var button=Button(sides,mirrored?"Right":"Left",()=>{SelectedMirrorBay=mirrored;RefreshScenarioSelection();});
+            button.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;button.TooltipText=Tr("Side of the aisle during your approach.");baySideButtons[i]=button;
         }
         scenarioDetails=Text(scenarios,"",16);scenarioDetails.AutowrapMode=TextServer.AutowrapMode.WordSmart;scenarioDetails.CustomMinimumSize=new(0,62);
         scenarioStart=Button(scenarios,"Start practice",BeginSelectedScenario);scenarioStart.CustomMinimumSize=new(0,52);
@@ -87,6 +102,7 @@ public partial class ParkingGame
         guideButton=Button(aids,"",()=>{DynamicGuides=!DynamicGuides;UpdateMenu();SaveSettings();});
         muteButton=Button(aids,"",()=>{Muted=!Muted;UpdateMenu();SaveSettings();});
         foreach(var toggle in new[]{tutorButton,guideButton,muteButton}) toggle.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
+        Slider(options,"Beeper volume (%)",0,100,5,BeeperVolume*100,v=>BeeperVolume=(float)v/100);
         var tools=new HBoxContainer();tools.AddThemeConstantOverride("separation",12);options.AddChild(tools);
         Button(tools,"Controller setup & controls",()=>ShowMenuPage("controls")).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
         Button(tools,"Teaching map",()=>ShowMenuPage("map")).TooltipText=Tr("A paused teaching aid, separate from the car's surround camera.");
@@ -109,7 +125,7 @@ public partial class ParkingGame
     string DifficultyTitle(Difficulty difficulty)=>Tr(difficulty.ToString());
     void OpenScenarioSelection()
     {
-        SelectedExercise=Exercise;SelectedDifficulty=Difficulty;RefreshScenarioSelection();ShowMenuPage("scenarios");
+        SelectedExercise=Exercise;SelectedDifficulty=Difficulty;SelectedMirrorBay=MirrorBay;RefreshScenarioSelection();ShowMenuPage("scenarios");
     }
     void RefreshScenarioSelection()
     {
@@ -118,12 +134,15 @@ public partial class ParkingGame
             exerciseCards[i].AddThemeStyleboxOverride("normal",Style(i==(int)SelectedExercise?accent:new Color("e0e3d8"),i==(int)SelectedExercise?new Color("456b34"):null,7));
             difficultyButtons[i].AddThemeStyleboxOverride("normal",Style(i==(int)SelectedDifficulty?accent:new Color("e0e3d8"),null,7));
         }
+        baySideChoices.Visible=SelectedExercise!=Exercise.Parallel;
+        for(int i=0;i<2;i++) baySideButtons[i].AddThemeStyleboxOverride("normal",Style((i==1)==SelectedMirrorBay?accent:new Color("e0e3d8"),null,7));
+        foreach(var diagram in parkingDiagrams) {diagram.Mirrored=SelectedMirrorBay;diagram.QueueRedraw();}
         var range=Scenario.SpaceRange(SelectedExercise,SelectedDifficulty);
-        scenarioDetails.Text=string.Format(Tr(SelectedExercise==Exercise.Parallel?"Gap length: {0:0.00}–{1:0.00} m. Your car is 4.45 m long.\nDrive up, choose your stopping point and line up before reversing.":"Bay width: {0:0.00}–{1:0.00} m. Your car is 1.80 m wide.\nApproach along the aisle and choose your own entry position."),range.Min,range.Max);
+        scenarioDetails.Text=string.Format(Tr(SelectedExercise==Exercise.Parallel?"Gap length: {0:0.00}–{1:0.00} m. Your car is 4.45 m long.\nDrive up, choose your stopping point and line up before reversing.":"Bay width: {0:0.00}–{1:0.00} m. Your car is 1.80 m wide.\nApproach along the aisle; the bay is on your {2}."),range.Min,range.Max,Tr(SelectedMirrorBay?"right":"left"));
     }
     void BeginSelectedScenario()
     {
-        Exercise=SelectedExercise;Difficulty=SelectedDifficulty;NewScenario(true);SaveSettings();Pause(false);
+        Exercise=SelectedExercise;Difficulty=SelectedDifficulty;MirrorBay=SelectedMirrorBay;NewScenario(true);SaveSettings();Pause(false);
     }
     void ShowMenuPage(string page)
     {

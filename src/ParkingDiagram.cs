@@ -6,11 +6,15 @@ namespace ParkingTrainer;
 public partial class ParkingDiagram : Control
 {
     public Exercise Exercise;
+    public bool Mirrored;
+    public bool FlipHorizontally=>Exercise!=Exercise.Parallel && !Mirrored;
     public override void _Ready() { MouseFilter=MouseFilterEnum.Ignore;Resized+=QueueRedraw; }
     public override void _Draw()
     {
         var scale=Size/new Vector2(220,130);
-        DrawSetTransform(Vector2.Zero,0,scale);
+        // The base sketch approaches facing right with the bay below it: a
+        // right-side bay. Flip it for a left-side bay, keeping labels driver-relative.
+        DrawSetTransform(FlipHorizontally?new Vector2(Size.X,0):Vector2.Zero,0,new(FlipHorizontally?-scale.X:scale.X,scale.Y));
         Color line=new("6b7f78"),car=new("879b92"),active=new("254c3d"),arrow=new("406a39");
         void Rect(float x,float y,float w,float h,Color color)=>DrawStyleBox(new StyleBoxFlat {BgColor=color,CornerRadiusTopLeft=4,CornerRadiusTopRight=4,CornerRadiusBottomLeft=4,CornerRadiusBottomRight=4},new(x,y,w,h));
         void Arrow(Vector2[] points)

@@ -35,7 +35,7 @@ Six visual sensor zones (front left/centre/right and rear left/centre/right) alw
 
 After moving, stop, select **P** and apply the **parking brake** to automatically enter third-person inspection. This also works for an imperfect parking position. Driving is frozen while you inspect. Mouse/right stick orbits, mouse wheel zooms, **B / Enter** returns to the cockpit with P and parking brake retained. Demonstrations also finish in inspection.
 
-Esc / Start opens the pause home page. **Choose scenario** opens three schematic parking cards and **Spacious / Standard / Tight** choices. Changes stay pending until **Start practice**; Back cancels them and keeps the current attempt. Retry preserves the layout seed and difficulty; New variation keeps the parking type/difficulty and generates another layout. Esc / B returns one menu level; from pause home it resumes driving.
+Esc / Start opens the pause home page. **Choose scenario** opens three schematic parking cards and **Spacious / Standard / Tight** choices. Both 90-degree types also offer **Bay side: Left / Right**, relative to your direction during the drive-up approach. Their diagrams reflect with the choice. Changes stay pending until **Start practice**; Back cancels them and keeps the current attempt. Retry preserves the layout seed and difficulty; New variation keeps the parking type/difficulty and generates another layout. Esc / B returns one menu level; from pause home it resumes driving.
 
 **Options** contains Windowed / Borderless fullscreen / Fullscreen, view settings, steering and assistance. **Controller setup & controls** holds the live pedal test, rebinding and keyboard help. **Teaching map** has its own paused page, separate from the car's surround-camera display. D-pad or left stick navigates; A / Enter selects. Display mode and practice preferences persist. Windowed mode restores its previous size and position.
 
@@ -61,4 +61,8 @@ Every scenario now starts on a forward approach, roughly 16–19 m of travel bef
 | Standard | 7.00–7.30 m | 2.55–2.70 m |
 | Tight | 6.45–6.65 m | 2.30–2.40 m |
 
+The bay side is saved, retained by Retry/New variation and shown on pause home. Mirroring reflects the complete bay layout, approach and demonstration steering while keeping the same left-hand-drive cockpit. Parallel parking keeps its existing layout.
+
 The selector shows these ranges; pause home shows the actual generated size. Difficulty changes physical space dimensions, independently of tutor/camera assistance. Layout generation validates a complete collision-free approach and parking witness without silently enlarging the selected space. Generator version 2 intentionally changes the layouts produced by earlier seeds.
+
+Parking audio now uses lower-pitched tones while retaining the original loudness and repeat timing, as requested. The close-range warning remains continuous and uses a smooth loop. **Esc → Options → Beeper volume (%)** adjusts the level; 0% is silent, and the separate mute button is still available. The level is saved between sessions.

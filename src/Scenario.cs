@@ -10,6 +10,7 @@ public sealed class Scenario
     public Exercise Exercise;
     public int Seed;
     public Difficulty Difficulty;
+    public bool Mirrored;
     public Pose SetupPose;
     public int ApproachEnd;
     public double BayWidth, Gap;
@@ -20,9 +21,9 @@ public sealed class Scenario
     public static (double Min,double Max) SpaceRange(Exercise exercise,Difficulty difficulty)=>
         exercise==Exercise.Parallel?difficulty switch {Difficulty.Spacious=>(8.0,8.3),Difficulty.Standard=>(7.0,7.3),_=>(6.45,6.65)}
         :difficulty switch {Difficulty.Spacious=>(2.90,3.10),Difficulty.Standard=>(2.55,2.70),_=>(2.30,2.40)};
-    public static Scenario Create(Exercise exercise,int seed,Difficulty difficulty=Difficulty.Standard)
+    public static Scenario Create(Exercise exercise,int seed,Difficulty difficulty=Difficulty.Standard,bool mirrored=false)
     {
-        var rng=new Random(seed); var scene=new Scenario { Exercise=exercise,Seed=seed,Difficulty=difficulty };
+        var rng=new Random(seed); var scene=new Scenario { Exercise=exercise,Seed=seed,Difficulty=difficulty,Mirrored=mirrored && exercise!=Exercise.Parallel };
         double neighborA=4.0+rng.NextDouble()*1.25,neighborB=3.9+rng.NextDouble()*1.2;
         double wA=1.72+rng.NextDouble()*.28,wB=1.72+rng.NextDouble()*.30;
         var range=SpaceRange(exercise,difficulty);
@@ -85,6 +86,15 @@ public sealed class Scenario
             {
                 Pose previous=i==0?scene.Goal:exit[i-1].Pose;
                 scene.Path.Add(new(previous,exit[i].Steering,-exit[i].Distance));
+            }
+            if(scene.Mirrored)
+            {
+                // Reflect the complete validated layout and controls, not the
+                // driver's car/cockpit. Steering changes sign under reflection.
+                static Pose Reflect(Pose p)=>new(-p.X,p.Z,-p.Yaw);
+                scene.Spawn=Reflect(scene.Spawn);scene.Goal=Reflect(scene.Goal);scene.SetupPose=Reflect(scene.SetupPose);
+                scene.Path=scene.Path.Select(p=>new PathStep(Reflect(p.Pose),-p.Steering,p.Distance)).ToList();
+                scene.Obstacles=scene.Obstacles.Select(o=>o with {Shape=o.Shape with {X=-o.Shape.X,Yaw=-o.Shape.Yaw}}).ToList();
             }
             return scene;
         }

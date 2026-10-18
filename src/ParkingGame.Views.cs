@@ -120,7 +120,7 @@ void fragment(){
         mapViewport.RenderTargetUpdateMode=mapRect.IsVisibleInTree()?SubViewport.UpdateMode.Always:SubViewport.UpdateMode.Disabled;
         UpdateGuides();
         var reference=Scene.Obstacles.First(o=>!o.Curb);
-        var corner=new Pose(reference.Shape.X,reference.Shape.Z,reference.Shape.Yaw).Point(-reference.Shape.Width/2+.09,reference.Shape.Length/2+.025);
+        var corner=new Pose(reference.Shape.X,reference.Shape.Z,reference.Shape.Yaw).Point((Scene.Mirrored?1:-1)*(reference.Shape.Width/2-.09),reference.Shape.Length/2+.025);
         landmark.Position=new((float)corner.X,.68f,(float)corner.Z);landmark.Visible=Tutor&&!Inspection;
     }
     double lastGuide=double.NaN;bool lastDynamic;

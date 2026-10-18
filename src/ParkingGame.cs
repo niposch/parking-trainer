@@ -31,6 +31,7 @@ public partial class ParkingGame : Node3D
         {
             if(arg.StartsWith("--capture=")) {capturePath=arg[10..];autoCapture=true;}
             if(arg.StartsWith("--view=")) captureView=arg[7..];
+            if(arg=="--mirror") MirrorBay=true;
             if(arg.StartsWith("--exercise=")) Exercise=(Exercise)int.Parse(arg[11..]);
         }
         var environment=new WorldEnvironment { Environment=new Godot.Environment {
@@ -43,7 +44,7 @@ public partial class ParkingGame : Node3D
         WorldFactory.Car(vehicle,"sedan",CarSpec.Width,CarSpec.Length,1.50,true);
         SetupMenuActions();SetupPedalActions();LoadSettings();SetupViews(); SetupHud();
         if(!autoCapture&&!smokeMode) ApplyWindowMode(DisplayMode,false);
-        beep=new AudioStreamPlayer(); AddChild(beep);
+        beep=new AudioStreamPlayer(); AddChild(beep);SetupSensorAudio();
         Input.JoyConnectionChanged+=ControllerChanged;
         foreach(int device in Input.GetConnectedJoypads()) {selectedController=device;break;}
         modernController=new ModernController();
@@ -60,12 +61,12 @@ public partial class ParkingGame : Node3D
     }
     public override void _Notification(int what)
     {
-        if(what==NotificationApplicationFocusOut && IsNodeReady() && !autoCapture) Pause(true);
+        if(what==NotificationApplicationFocusOut && IsNodeReady() && !autoCapture && !smokeMode) Pause(true);
     }
     internal void NewScenario(bool newSeed)
     {
         if(newSeed) Seed=Random.Shared.Next(1,999999);
-        Scene=Scenario.Create(Exercise,Seed,Difficulty);
+        Scene=Scenario.Create(Exercise,Seed,Difficulty,MirrorBay);
         if(lot!=null) {RemoveChild(lot);lot.QueueFree();}
         lot=new Node3D { Name="PracticeLot" };AddChild(lot);WorldFactory.BuildLot(lot,Scene);
         Car=new DrivingModel {Pose=Scene.Spawn,Gear=Gear.P,ParkingBrake=true};
@@ -85,6 +86,8 @@ public partial class ParkingGame : Node3D
             if(captureView=="shoulder") { LookYaw=-2.25f; LookPitch=-.12f; }
             if(captureView=="right-90") {LookYaw=-Mathf.Pi/2;LookPitch=0;Tutor=false;}
             if(captureView=="right-rear") {LookYaw=-Mathf.Pi*.75f;LookPitch=0;Tutor=false;}
+            if(captureView=="door-left") {LookYaw=.65f;LookPitch=-.30f;Tutor=false;}
+            if(captureView=="door-right") {LookYaw=-.80f;LookPitch=-.30f;Tutor=false;}
             if(captureView=="back") {LookYaw=-Mathf.Pi;LookPitch=0;Tutor=false;}
             if(captureView.StartsWith("asset")) {Car.Pose=new(8,8,0);Tutor=false;}
             Car.Steer=-.4;
@@ -235,24 +238,6 @@ public partial class ParkingGame : Node3D
             Car.Pose=next;demoCarry-=Math.Abs(step.Distance);demoStep++;
         }
     }
-    void Sound(double dt)
-    {
-        beepTime-=dt;
-        double range=Math.Min(FrontRange,RearRange);
-        if(Muted||Paused||range>=1.6||Car.Gear==Gear.P) {beep.Stop();return;}
-        if(beepTime>0) return;
-        bool front=FrontRange<RearRange;
-        double duration=range<.30?.22:.075;
-        int count=(int)(22050*duration);byte[] data=new byte[count*2];
-        for(int i=0;i<count;i++)
-        {
-            double fade=Math.Min(1,Math.Min(i/80.0,(count-i)/80.0));
-            short sample=(short)(Math.Sin(i*2*Math.PI*(front?1100:780)/22050)*4200*fade);
-            data[i*2]=(byte)(sample&255);data[i*2+1]=(byte)(sample>>8);
-        }
-        beep.Stream=new AudioStreamWav { Format=AudioStreamWav.FormatEnum.Format16Bits,MixRate=22050,Data=data };
-        beep.Play();beepTime=range<.30?.20:.16+.65*Math.Clamp((range-.3)/1.3,0,1);
-    }
     public override async void _Process(double delta)
     {
         frames++;
@@ -273,9 +258,9 @@ public partial class ParkingGame : Node3D
         {windowedSize=DisplayServer.WindowGetSize();windowedPosition=DisplayServer.WindowGetPosition();}
         var cfg=new ConfigFile();cfg.SetValue("view","layout_version",2);cfg.SetValue("view","eye_height",EyeHeight);cfg.SetValue("view","fov",Fov);
         cfg.SetValue("input","rate_steering",RateSteering);cfg.SetValue("input","deadzone",Deadzone);
-        cfg.SetValue("preferences","tutor",Tutor);cfg.SetValue("preferences","muted",Muted);
+        cfg.SetValue("preferences","tutor",Tutor);cfg.SetValue("preferences","muted",Muted);cfg.SetValue("preferences","beeper_volume",BeeperVolume);
         cfg.SetValue("preferences","dynamic_guides",DynamicGuides);
-        cfg.SetValue("practice","exercise",(int)Exercise);cfg.SetValue("practice","difficulty",(int)Difficulty);
+        cfg.SetValue("practice","exercise",(int)Exercise);cfg.SetValue("practice","difficulty",(int)Difficulty);cfg.SetValue("practice","mirrored_bay",MirrorBay);
         cfg.SetValue("display","mode",DisplayMode);cfg.SetValue("display","window_size",windowedSize);cfg.SetValue("display","window_position",windowedPosition);
         SavePedalBindings(cfg);
         cfg.Save("user://settings.cfg");
@@ -288,8 +273,10 @@ public partial class ParkingGame : Node3D
         EyeHeight=(float)cfg.GetValue("view","eye_height",1.20f);Fov=(float)cfg.GetValue("view","fov",76f);
         RateSteering=(bool)cfg.GetValue("input","rate_steering",true);Deadzone=(float)cfg.GetValue("input","deadzone",.10f);
         Tutor=(bool)cfg.GetValue("preferences","tutor",true);Muted=(bool)cfg.GetValue("preferences","muted",false);
+        BeeperVolume=Mathf.Clamp((float)cfg.GetValue("preferences","beeper_volume",1f),0,1);
         DynamicGuides=(bool)cfg.GetValue("preferences","dynamic_guides",true);
         Exercise=(Exercise)Math.Clamp((int)cfg.GetValue("practice","exercise",0),0,2);Difficulty=(Difficulty)Math.Clamp((int)cfg.GetValue("practice","difficulty",1),0,2);
+        MirrorBay=(bool)cfg.GetValue("practice","mirrored_bay",false);
         DisplayMode=Math.Clamp((int)cfg.GetValue("display","mode",0),0,2);
         windowedSize=cfg.GetValue("display","window_size",new Vector2I(1280,800)).AsVector2I();
         windowedPosition=cfg.GetValue("display","window_position",new Vector2I(100,80)).AsVector2I();

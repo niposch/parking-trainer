@@ -41,10 +41,20 @@ public partial class ParkingGame
             Check(!BodyBlocks(backEye,new(backEye.X,backEye.Y,3)),"Leaned rear sightline passes through the rear glass");
             Check(BodyBlocks(forwardEye,new(0,2,-1)),"Roof remains a solid occluder");
             Check(BodyBlocks(forwardEye,forwardEye+(new Vector3(.90f,1.15f,-.96f)-forwardEye)*2),"Broad B pillar remains a solid occluder");
+            Check(new[]{-1f,1f}.All(side=>BodyBlocks(forwardEye,forwardEye+(new Vector3(side*.90f,.87f,-2.07f)-forwardEye)*2)),"Both door mirror attachment openings are closed by the body mesh");
+            var skin=((ArrayMesh)body.Mesh).SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array().Select(v=>(vehicle.GlobalTransform.AffineInverse()*body.GlobalTransform)*v)
+                .Where(v=>v.Y>.55f&&v.Y<.93f&&v.Z>-1.7f&&v.Z<-.65f&&Math.Abs(v.X)>.70f).ToArray();
+            Check(skin.Length>0 && skin.All(v=>Math.Abs(Math.Abs(v.X)-.90f)<.015f),"Door skin remains flush instead of sinking inward below the window");
             Check(gearLabel.GetViewport()!=GetViewport() && rearRect.GetViewport()!=GetViewport(),"Instruments and parking feed render on cockpit screens");
             sensorGraphic.SetRanges(new[]{2.0,.25,.8},new[]{.5,1.2,2.0});
             Check(Enumerable.Range(0,6).Select(sensorGraphic.Level).SequenceEqual(new[]{0,4,2,3,1,0}),"Each front/rear sensor has independent stepped visual proximity");
             Check(ParkingSensors.ProximityLevel(.3)==3 && ParkingSensors.ProximityLevel(.6)==2 && ParkingSensors.ProximityLevel(1)==1 && ParkingSensors.ProximityLevel(1.6)==0,"Sensor display thresholds match the documented steps");
+            Paused=false;Car.Gear=Gear.R;FrontRange=2;RearRange=.70;beepTime=0;Sound(.01);
+            Check(beep.VolumeDb==0 && beepTime>.3 && beepTime<.4 && beep.Stream==sensorPulses[1],"Lower-pitched parking pulses retain the original loudness and cadence");
+            RearRange=.20;Sound(.01);var loop=beep.Stream;Sound(.01);
+            Check(beep.Stream==loop && ((AudioStreamWav)loop).LoopMode==AudioStreamWav.LoopModeEnum.Forward,"Close-distance warning reuses a smooth continuous tone instead of restarting");
+            BeeperVolume=0;Sound(.01);Check(!beep.Playing,"Zero beeper volume silences the warning");
+            BeeperVolume=1;Paused=true;Car.Gear=Gear.P;FrontRange=RearRange=2;
             Check(MenuPage=="home" && menuPages["home"].Visible && !menuPages["options"].Visible,"Pause opens a focused home page with options in a submenu");
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.DpadDown,Pressed=true});await PhysicsFrames(3);
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.DpadDown,Pressed=false});
@@ -52,9 +62,11 @@ public partial class ParkingGame
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.A,Pressed=true});await PhysicsFrames(3);
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.A,Pressed=false});await PhysicsFrames(3);
             Check(MenuPage=="scenarios" && Paused,"Controller accept opens scenario selection");
+            Check(!baySideChoices.Visible,"Parallel parking hides the bay-side controls");
             var currentScene=Scene;var currentPose=Car.Pose;
-            exerciseCards[2].EmitSignal(Godot.Button.SignalName.Pressed);difficultyButtons[2].EmitSignal(Godot.Button.SignalName.Pressed);
-            Check(Scene==currentScene && Car.Pose==currentPose,"Editing scenario choices preserves the current attempt until Start");
+            exerciseCards[2].EmitSignal(Godot.Button.SignalName.Pressed);difficultyButtons[2].EmitSignal(Godot.Button.SignalName.Pressed);baySideButtons[1].EmitSignal(Godot.Button.SignalName.Pressed);
+            Check(Scene==currentScene && Car.Pose==currentPose && !MirrorBay,"Editing scenario choices preserves the current attempt until Start");
+            Check(baySideChoices.Visible && parkingDiagrams[1].Mirrored && parkingDiagrams[2].Mirrored && !parkingDiagrams[1].FlipHorizontally && !parkingDiagrams[2].FlipHorizontally,"Right-side choice reflects both bay diagrams");
             Tap(Key.Escape);await PhysicsFrames(3);
             Check(Paused && MenuPage=="home" && Scene==currentScene,"Escape backs out of scenario selection without resuming or replacing the attempt");
             ShowMenuPage("options");ShowMenuPage("controls");Tap(Key.Escape);await PhysicsFrames(3);
@@ -64,8 +76,8 @@ public partial class ParkingGame
             Check(DrivingModel.Body(Car.Pose).Corners().All(p=>{var v=mapCamera.UnprojectPosition(new((float)p.X,0,(float)p.Z));return v.X>0&&v.X<mapViewport.Size.X&&v.Y>0&&v.Y<mapViewport.Size.Y;}),"Teaching map frames the complete car on the new approach");
             Tap(Key.Escape);await PhysicsFrames(3);Check(MenuPage=="options" && !mapRect.Visible,"Map Back returns to Options and hides the map");
             Tap(Key.Escape);await PhysicsFrames(3);Check(Paused && MenuPage=="home","Options goes back to pause home");
-            OpenScenarioSelection();exerciseCards[2].EmitSignal(Godot.Button.SignalName.Pressed);difficultyButtons[2].EmitSignal(Godot.Button.SignalName.Pressed);scenarioStart.EmitSignal(Godot.Button.SignalName.Pressed);await PhysicsFrames(3);
-            Check(!Paused && Exercise==Exercise.ForwardBay && Difficulty==Difficulty.Tight && Scene.BayWidth>=2.30 && Scene.BayWidth<=2.40,"Start applies the selected parking type and physical difficulty");
+            OpenScenarioSelection();exerciseCards[2].EmitSignal(Godot.Button.SignalName.Pressed);difficultyButtons[2].EmitSignal(Godot.Button.SignalName.Pressed);baySideButtons[1].EmitSignal(Godot.Button.SignalName.Pressed);scenarioStart.EmitSignal(Godot.Button.SignalName.Pressed);await PhysicsFrames(3);
+            Check(!Paused && Exercise==Exercise.ForwardBay && Difficulty==Difficulty.Tight && MirrorBay && Scene.Mirrored && Scene.BayWidth>=2.30 && Scene.BayWidth<=2.40,"Start applies parking type, physical difficulty and right-side bay");
             Check(Car.Gear==Gear.P && Car.ParkingBrake && Scene.ApproachEnd>200 && Scene.Path[1].Distance>0,"New selected scenario starts secured before a forward approach");
             Pause(true);
             if(DisplayServer.GetName()!="headless")
@@ -144,13 +156,14 @@ public partial class ParkingGame
             Check(Car.Gear==Gear.P && Car.ParkingBrake && Car.Speed==0,"New variation resets gear and parking brake");
             foreach(Exercise exercise in Enum.GetValues<Exercise>())
             foreach(Difficulty difficulty in Enum.GetValues<Difficulty>())
+            foreach(bool mirrored in exercise==Exercise.Parallel?new[]{false}:new[]{false,true})
             {
-                Exercise=exercise;Difficulty=difficulty;NewScenario(false);StartDemo();
-                Check(Car.Gear==Gear.D && Car.Pose==Scene.Spawn,$"{exercise}/{difficulty} demonstration starts on the approach in D");
+                MirrorBay=mirrored;Exercise=exercise;Difficulty=difficulty;NewScenario(false);StartDemo();
+                Check(Car.Gear==Gear.D && Car.Pose==Scene.Spawn,$"{exercise}/{difficulty}/{(mirrored?"right":"left")} demonstration starts on the approach in D");
                 bool sawReverse=false;int safety=0;
                 while(Demo && safety++<4000) {RunDemo(.1);sawReverse|=Car.Gear==Gear.R;}
-                Check(!Demo && Scene.PositionError(Car.Pose)<.02 && Car.Gear==Gear.P && Car.ParkingBrake,$"{exercise}/{difficulty} demonstration finishes parked and secured");
-                if(exercise!=Exercise.ForwardBay) Check(sawReverse,$"{exercise}/{difficulty} demonstration shifts from approach into reverse parking");
+                Check(!Demo && Scene.PositionError(Car.Pose)<.02 && Car.Gear==Gear.P && Car.ParkingBrake,$"{exercise}/{difficulty}/{(mirrored?"right":"left")} demonstration finishes parked and secured");
+                if(exercise!=Exercise.ForwardBay) Check(sawReverse,$"{exercise}/{difficulty}/{(mirrored?"right":"left")} demonstration shifts from approach into reverse parking");
             }
             await PhysicsFrames(4);
             GD.Print($"SMOKE COMPLETE: {passed} runtime input/UI/demonstration checks passed.");GetTree().Quit();

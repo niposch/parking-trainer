@@ -74,7 +74,7 @@ public partial class ParkingGame
         var size=GetViewport().GetVisibleRect().Size;
         hud.Scale=new(size.X/1440,size.Y/900);
     }
-    string ExerciseName()=>Tr(ExerciseTitle(Exercise));
+    string ExerciseName()=>Exercise==Exercise.Parallel?Tr(ExerciseTitle(Exercise)):string.Format(Tr("{0} ({1})"),Tr(ExerciseTitle(Exercise)),Tr(MirrorBay?"right":"left"));
     void UpdateMenu()
     {
         if(!IsInstanceValid(menu)) return;

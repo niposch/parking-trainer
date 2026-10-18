@@ -26,9 +26,10 @@ foreach(double steer in new[]{-.6,-.15,0,.3,.6})
 }
 foreach(Exercise e in Enum.GetValues<Exercise>())
 foreach(Difficulty difficulty in Enum.GetValues<Difficulty>())
+foreach(bool mirrored in e==Exercise.Parallel?new[]{false}:new[]{false,true})
 for(int seed=0;seed<100;seed++)
 {
-    var s=Scenario.Create(e,seed,difficulty); var repeat=Scenario.Create(e,seed,difficulty);
+    var s=Scenario.Create(e,seed,difficulty,mirrored); var repeat=Scenario.Create(e,seed,difficulty,mirrored);
     Check(s.Spawn==repeat.Spawn && s.Obstacles.SequenceEqual(repeat.Obstacles),"Deterministic scenario");
     Check(!DrivingModel.Collides(s.Spawn,s.Obstacles),"Clear spawn");
     var range=Scenario.SpaceRange(e,difficulty);double space=e==Exercise.Parallel?s.Gap:s.BayWidth;
@@ -37,6 +38,19 @@ for(int seed=0;seed<100;seed++)
     Check(s.Path.Skip(1).Take(s.ApproachEnd).All(q=>q.Distance>0),"Approach requires driving forward before the parking maneuver");
     var lateral=(s.Spawn.X-s.SetupPose.X)*Math.Cos(s.SetupPose.Yaw)-(s.Spawn.Z-s.SetupPose.Z)*Math.Sin(s.SetupPose.Yaw);
     Check(Math.Abs(lateral)>.10,"Approach starts laterally offset from the parking reference setup");
+    if(e!=Exercise.Parallel)
+    {
+        var target=DrivingModel.Body(s.Goal);double dx=target.X-s.Spawn.X,dz=target.Z-s.Spawn.Z;
+        double side=dx*Math.Cos(s.Spawn.Yaw)-dz*Math.Sin(s.Spawn.Yaw);
+        Check(mirrored?side>0:side<0,"Bay is on the selected side of the approach");
+    }
+    if(mirrored)
+    {
+        var original=Scenario.Create(e,seed,difficulty);
+        Check(s.Spawn==new Pose(-original.Spawn.X,original.Spawn.Z,-original.Spawn.Yaw) && s.ApproachEnd==original.ApproachEnd,"Mirror preserves seed layout and approach length");
+        Check(s.Path.Count==original.Path.Count && s.Obstacles.Zip(original.Obstacles).All(pair=>pair.First==pair.Second with {Shape=pair.Second.Shape with {X=-pair.Second.Shape.X,Yaw=-pair.Second.Shape.Yaw}}),"All neighboring cars and curbs reflect together");
+        Check(s.Path.Zip(original.Path).All(pair=>pair.First.Pose==new Pose(-pair.Second.Pose.X,pair.Second.Pose.Z,-pair.Second.Pose.Yaw) && pair.First.Steering==-pair.Second.Steering && pair.First.Distance==pair.Second.Distance),"Complete mirrored path reverses steering without changing pedal direction");
+    }
     var p=s.Spawn;
     foreach(var q in s.Path.Skip(1))
     {
@@ -63,4 +77,4 @@ car.Move(1,new[]{obstacle});
 Check(car.Contacts==1 && !DrivingModel.Collides(car.Pose,new[]{obstacle}),"Swept collision stops without tunnelling");
 Check(new Footprint(0,0,2,4,.4).Overlaps(new(0,0,2,4,-.3)),"Rotated SAT overlap");
 Check(!new Footprint(0,0,2,4,.4).Overlaps(new(20,0,2,4,-.3)),"Separated SAT boxes");
-Console.WriteLine($"PASS: {checks:N0} checks, including 900 procedural feasibility traces.");
+Console.WriteLine($"PASS: {checks:N0} checks, including 1,500 procedural feasibility traces.");

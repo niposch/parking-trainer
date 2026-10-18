@@ -29,7 +29,11 @@ internal static class PlayerCabin
         {
             var pivot=new Vector3(0,.15f,-.025f);p+=pivot;
             float upper=Mathf.Clamp((p.Y-.70f)/.10f,0,1);
-            p.X*=1+upper*.1636f;
+            // The toy body has a recessed .55 m side rail beneath its cabin.
+            // Bring that rail flush with the .65 m fender/door plane instead of
+            // letting the widened upper cabin lean back into the lower doors.
+            if(p.Y<=.8001f && Math.Abs(p.X)>=(Math.Abs(p.Z)<.5f && p.Y>.40f?.50f:.549f) && Math.Abs(p.X)<=.651f) p.X=Math.Sign(p.X)*.65f;
+            else p.X*=1+upper*.1636f;
             // Extend the existing rear glass into a liftback, leaving the bumper
             // and wheel arches in place. The deformation is continuous at the belt.
             float rear=p.Z<-.57f?Mathf.Clamp((-p.Z-.57f)/.18f,0,1):0;
@@ -77,7 +81,7 @@ internal static class PlayerCabin
             }
             return result;
         }
-        StandardMaterial3D? paint=null;
+        StandardMaterial3D? paint=null;Vector2 doorPaintUv=Vector2.Zero;bool foundPaint=false;
         for(int surface=0;surface<original.GetSurfaceCount();surface++)
         {
             var arrays=original.SurfaceGetArrays(surface);var points=arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
@@ -91,6 +95,7 @@ internal static class PlayerCabin
                 var poly=new List<(Vector3 P,Vector2 U)>();foreach(int k in new[]{indices[i],indices[i+1],indices[i+2]}) poly.Add((Shape(points[k]),uv[k]));
                 var centre=(uv[indices[i]]+uv[indices[i+1]]+uv[indices[i+2]])/3;
                 var c=texture?.GetPixel(Math.Clamp((int)(centre.X*texture.GetWidth()),0,texture.GetWidth()-1),Math.Clamp((int)(centre.Y*texture.GetHeight()),0,texture.GetHeight()-1))??Colors.White;
+                if(!foundPaint && c.R>.75f && c.G>.25f && c.G<.55f && c.B<.40f) {doorPaintUv=centre;foundPaint=true;}
                 bool window=points[indices[i]].Y>.64f && points[indices[i+1]].Y>.64f && points[indices[i+2]].Y>.64f && c.B>c.R*1.04f && c.G>.64f && c.R>.48f;
                 if(window) {Emit(glass,poly);continue;}
                 var n=(poly[1].P-poly[0].P).Cross(poly[2].P-poly[0].P).Normalized();
@@ -104,6 +109,18 @@ internal static class PlayerCabin
                 }
                 else Solid(poly);
             }
+        }
+        // Removing the source mirror block also exposes its attachment opening.
+        // Close that opening at the shared door plane, with paint outside and
+        // the same inset liner inside, rather than hiding it behind a loose box.
+        foreach(float side in new[]{-1f,1f})
+        {
+            var cap=new List<(Vector3 P,Vector2 U)> {
+                (Shape(new(side*.55f,.55f,.3479022f)),doorPaintUv),
+                (Shape(new(side*.55f,.55f,.4479022f)),doorPaintUv),
+                (Shape(new(side*.55f,.65f,.4479022f)),doorPaintUv),
+                (Shape(new(side*.55f,.65f,.3479022f)),doorPaintUv) };
+            if(side<0) cap.Reverse();Solid(cap);
         }
         // Return faces join the inner liner to every open window edge.
         foreach(var e in edges.Values.Where(e=>e.Count==1))
