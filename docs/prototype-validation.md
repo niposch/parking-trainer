@@ -113,3 +113,5 @@ Published runtime revision `ff49484` in [successful Pages run 39162154796](https
 References: [Godot web audio playback modes](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html#audio-playback), [ScrollContainer touch behavior](https://docs.godotengine.org/en/stable/classes/class_scrollcontainer.html), [four-camera processing example](https://www.nissan-global.com/EN/INNOVATION/TECHNOLOGY/ARCHIVE/IAVM/). Manufacturer descriptions are references, not the learner's identified equipment.
 
 The final plain-host browser export passed **128 runtime checks** with no console errors, including the real GUI touch-swipe/tap checks, streamed alarm playback checks and surround ground coverage. This is not a recording or listening test on the owner's phone.
+
+Published runtime `9ee9dc9` through [successful Pages run 39164029366](https://github.com/niposch/parking-trainer/actions/runs/39164029366). The actual public game passed all **128 browser checks** after closing the old cached tab and reopening to activate the updated worker.
