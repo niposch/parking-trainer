@@ -10,6 +10,17 @@ concurrency:
   group: github-pages
   cancel-in-progress: false
 jobs:
+  updates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install browser regression tooling
+        run: |
+          npm install --no-save --prefix .cache/web-tests playwright@1.64.1
+          node .cache/web-tests/node_modules/playwright/cli.js install --with-deps chromium
+      - name: Verify cached-browser deployment updates
+        run: node --test tools/test-web-updates.cjs
   build:
     runs-on: windows-latest
     timeout-minutes: 40
@@ -29,7 +40,7 @@ jobs:
         with:
           path: builds/web
   deploy:
-    needs: build
+    needs: [build, updates]
     runs-on: ubuntu-latest
     permissions:
       pages: write

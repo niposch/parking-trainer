@@ -30,7 +30,7 @@ The script checks for export errors, managed runtime content and accidental SDL 
 
 ## Hosting and validation
 
-Play at **https://niposch.de/parking-trainer/**. The Pages build uses Godot’s service worker to supply isolation within the game’s subdirectory; see [deployment and maintenance](deployment.md).
+Play at **https://niposch.de/parking-trainer/**. The Pages build uses an application-scoped worker to supply isolation. The updated source checks the latest release before starting a new tab, then checks automatically in the background. If an update appears during play, open the pause menu and choose **Reload to update**; this ends the current practice session. No manual update check is needed. Startup requires a connection so it can verify freshness. See [deployment and maintenance](deployment.md) for publication status and one-time migration behavior.
 
 Alternatively, publish the contents of `builds/web/` on a static HTTPS host with `application/wasm` for WASM files, plus:
 

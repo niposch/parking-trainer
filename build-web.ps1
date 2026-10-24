@@ -7,6 +7,16 @@ $engineRoot = Join-Path $cache 'godot\Godot_v4.7.2-stable_mono_web_export_win64'
 $engine = Join-Path $engineRoot 'Godot_v4.7.2-stable_mono_web_export_win64_console.exe'
 $stage = Join-Path $root '.cache\web-project'
 $output = Join-Path $root 'builds\web'
+$revision = $env:GITHUB_SHA
+if (!$revision) {
+    $revision = git -C $root rev-parse --short=12 HEAD
+    if ($LASTEXITCODE) { throw 'Cannot identify source revision.' }
+}
+$revision = $revision.Trim().Substring(0,[Math]::Min(12,$revision.Trim().Length))
+$buildStamp = if ($env:GITHUB_RUN_ID) { "$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT" } else { [DateTime]::UtcNow.ToString('yyyyMMddHHmmssfff') }
+$buildId = "$revision-$buildStamp"
+if ($buildId -notmatch '^[a-zA-Z0-9-]{1,100}$') { throw 'Invalid build identifier.' }
+$executable = "game-$buildId"
 $names = @('PATH','DOTNET_ROOT','DOTNET_CLI_HOME','NUGET_PACKAGES','ParkingWeb','DOTNET_SKIP_FIRST_TIME_EXPERIENCE','DOTNET_CLI_TELEMETRY_OPTOUT','DOTNET_GENERATE_ASPNET_CERTIFICATE')
 $saved = @{}; foreach ($name in $names) { $saved[$name] = [Environment]::GetEnvironmentVariable($name,'Process') }
 try {
@@ -32,6 +42,10 @@ try {
         & "$sdk\dotnet.exe" workload install wasm-tools --skip-manifest-update --source https://api.nuget.org/v3/index.json
         if ($LASTEXITCODE) { throw 'WASM workload setup failed.' }
     }
+    # Only clear the known generated output, after verifying its absolute path.
+    $expectedOutput = [System.IO.Path]::GetFullPath((Join-Path $root 'builds\web'))
+    if ([System.IO.Path]::GetFullPath($output) -ne $expectedOutput) { throw 'Invalid web output path.' }
+    if (Test-Path -LiteralPath $output) { Remove-Item -LiteralPath $output -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $stage,$output | Out-Null
     # Stage a clean source copy. Neither toolchain packages nor native Windows binaries enter the export.
     $stagePrefix = [System.IO.Path]::GetFullPath($stage) + [System.IO.Path]::DirectorySeparatorChar
@@ -90,14 +104,30 @@ progressive_web_app/ensure_cross_origin_isolation_headers=true
         & $engine --headless --editor --path $stage --import
         if ($LASTEXITCODE) { throw 'Web resource import failed.' }
         $exportFlag = if ($DebugExport) { '--export-debug' } else { '--export-release' }
-        & $engine --headless --path $stage $exportFlag Web (Join-Path $output 'index.html') 2>&1 | Tee-Object -Variable exportLines
+        & $engine --headless --path $stage $exportFlag Web (Join-Path $output "$executable.html") 2>&1 | Tee-Object -Variable exportLines
         if ($LASTEXITCODE -or ($exportLines -match '^ERROR:')) { throw 'Web export failed; inspect the export log.' }
-        $packIndex = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes((Join-Path $output 'index.pck')))
+        $packIndex = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes((Join-Path $output "$executable.pck")))
         foreach ($required in @('.godot/mono/publish/wasm32/ParkingTrainer.dll','GodotSharp.dll','.dotnet-publish-manifest')) {
             if (!$packIndex.Contains($required)) { throw "Exporter omitted managed content: $required" }
         }
         if ($packIndex.Contains('SDL3.dll')) { throw 'Windows native controller library entered the browser package.' }
     } finally { Pop-Location }
+    $htmlPath = Join-Path $output "$executable.html"
+    $html = [System.IO.File]::ReadAllText($htmlPath)
+    $client = [System.IO.File]::ReadAllText((Join-Path $root 'web\update-client.js'))
+    $html = $html.Replace('__PARKING_UPDATE_CLIENT__',$client).Replace('__PARKING_BUILD__',$buildId)
+    $html = $html.Replace("$executable.service.worker.js",'index.service.worker.js').Replace("$executable.manifest.json",'index.manifest.json')
+    # Keep installed-app identity and launch URLs stable after renaming the HTML.
+    $manifestPath = Join-Path $output "$executable.manifest.json"
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    $manifest.start_url = './index.html'
+    $manifest | Add-Member -NotePropertyName id -NotePropertyValue './index.html' -Force
+    $manifest | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $output 'index.manifest.json') -Encoding utf8
+    Remove-Item -LiteralPath $manifestPath -Force
+    [System.IO.File]::WriteAllText((Join-Path $output 'index.html'),$html)
+    Remove-Item -LiteralPath $htmlPath,(Join-Path $output "$executable.service.worker.js") -Force
+    Copy-Item -LiteralPath (Join-Path $root 'web\service-worker.js') -Destination (Join-Path $output 'index.service.worker.js') -Force
+    @{build=$buildId;revision=$revision} | ConvertTo-Json -Compress | Set-Content (Join-Path $output 'version.json') -Encoding utf8
     New-Item -ItemType File -Force -Path (Join-Path $output '.nojekyll') | Out-Null
     Copy-Item -LiteralPath (Join-Path $root 'licenses') -Destination $output -Recurse -Force
     Copy-Item -LiteralPath (Join-Path $root 'assets\THIRD_PARTY.md') -Destination $output -Force

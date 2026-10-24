@@ -83,7 +83,7 @@ Append `?check=1` to the browser URL to run the browser checks. `.cache/`, `.god
 
 ## Publishing
 
-Pushing to `main` builds and deploys the browser version through GitHub Pages ([deployment.md](docs/deployment.md)). Source: [niposch/parking-trainer](https://github.com/niposch/parking-trainer).
+Pushing to `main` builds and deploys the browser version through GitHub Pages. New tabs check the published version before starting; existing sessions check automatically and offer **Reload to update** in the pause menu when needed ([deployment.md](docs/deployment.md)). Source: [niposch/parking-trainer](https://github.com/niposch/parking-trainer).
 
 ## Documentation and limits
 

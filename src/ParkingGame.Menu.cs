@@ -77,6 +77,7 @@ public partial class ParkingGame
             {var style=(StyleBoxFlat)b.GetThemeStylebox(state).Duplicate();style.ContentMarginLeft=style.ContentMarginRight=6;b.AddThemeStyleboxOverride(state,style);}
         }
         var side=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};side.AddThemeConstantOverride("separation",8);homeRow.AddChild(side);
+        if(IsWeb) SetupWebUpdateMenu(side);
         chooseScenarioButton=Button(side,"Choose scenario",OpenScenarioSelection);
         Button(side,"Surprise me",StartRandomMix).TooltipText=Tr("A random parking type, side, size, task and obstacles.");
         Button(side,"How to drive",()=>ShowMenuPage("howto"));

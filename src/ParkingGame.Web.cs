@@ -5,8 +5,30 @@ public partial class ParkingGame
 {
     static bool IsWeb=>OS.HasFeature("web");
     bool webHadMouseCapture,webCheck;
+    Button? webUpdateButton;
+    Label? webUpdateLabel;
+    ulong webUpdatePoll;
+    void SetupWebUpdateMenu(Node parent)
+    {
+        webUpdateButton=Button(parent,"Reload to update",()=>{
+            SaveSettings();JavaScriptBridge.Eval("window.parkingUpdates?.reload()");
+        });
+        webUpdateButton.Visible=false;
+        webUpdateLabel=Text(parent,"",13,new("52675f"));
+        webUpdateLabel.AutowrapMode=TextServer.AutowrapMode.WordSmart;
+        webUpdateLabel.Visible=false;
+    }
+    void RefreshWebUpdateMenu()
+    {
+        if(!IsWeb || webUpdateButton==null || webUpdateLabel==null || Time.GetTicksMsec()<webUpdatePoll) return;
+        webUpdatePoll=Time.GetTicksMsec()+1000;
+        bool available=JavaScriptBridge.Eval("window.parkingUpdates?.status === 'available'").AsBool();
+        webUpdateButton.Visible=available;webUpdateLabel.Visible=available;
+        if(available) webUpdateLabel.Text=Tr("A new version is available. Reloading ends this practice session.");
+    }
     void UpdateWebFocus()
     {
+        RefreshWebUpdateMenu();
         if(IsWeb && IsInstanceValid(displaySelector))
         {
             int actual=DisplayServer.WindowGetMode()==DisplayServer.WindowMode.Fullscreen?1:0;
@@ -30,6 +52,12 @@ public partial class ParkingGame
         {
             await PhysicsFrames(4);
             Check(IsWeb,"Actual WebAssembly runtime");
+            JavaScriptBridge.Eval("window.__parkingUpdateTestStatus=window.parkingUpdates.status;window.parkingUpdates.status='available'");
+            webUpdatePoll=0;RefreshWebUpdateMenu();
+            Check(webUpdateButton?.Visible==true && webUpdateLabel?.Visible==true,"Menu announces a background update and offers reload");
+            JavaScriptBridge.Eval("window.parkingUpdates.status=window.__parkingUpdateTestStatus;delete window.__parkingUpdateTestStatus");
+            webUpdatePoll=0;RefreshWebUpdateMenu();
+            Check(webUpdateButton?.Visible==false && webUpdateLabel?.Visible==false,"Update entry stays hidden when already current");
             Check(Paused && Car.Gear==Gear.P && Car.ParkingBrake,"Starts secured and paused");
             Check(!modernController.Connected,"Windows SDL driver excluded");
             Check(mirrorViewports.Length==3 && surroundCamera.Projection==Camera3D.ProjectionType.Orthogonal,"Three mirrors and a metric surround view");

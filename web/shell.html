@@ -22,13 +22,13 @@
   <div id="loading" role="status"><h1>Parking Practice</h1><span id="message">Loading the parking lot…</span><progress id="progress"></progress><div id="error"></div></div>
   <pre id="checks" hidden></pre>
   <noscript>Enable JavaScript to play Parking Practice.</noscript>
-  <script src="$GODOT_URL"></script>
   <script>
+    __PARKING_UPDATE_CLIENT__
+    window.parkingUpdates = createParkingUpdates('__PARKING_BUILD__');
     // Use the full visual viewport as the address bar changes height.
     const config = $GODOT_CONFIG;
     const checking = new URLSearchParams(location.search).has('check');
     if (checking) config.args = ['--', '--web-check'];
-    const engine = new Engine(config);
     const loading = document.getElementById('loading');
     const progress = document.getElementById('progress');
     const results = document.getElementById('checks');
@@ -40,14 +40,27 @@
       progress.hidden = true;
     }
     async function start() {
-    const missing = Engine.getMissingFeatures({threads:true});
-    if (missing.length && config.serviceWorker && config.ensureCrossOriginIsolationHeaders && 'serviceWorker' in navigator && !navigator.serviceWorker.controller) {
-      document.getElementById('message').textContent = 'Preparing browser support…';
-      await engine.installServiceWorker();
-      await navigator.serviceWorker.ready;
-      location.reload();
+    document.getElementById('message').textContent = 'Checking for the latest version…';
+    if (!await window.parkingUpdates.prepare()) return;
+    if (!crossOriginIsolated) {
+      // First installation adds isolation on the next navigation. Bound this
+      // separately from release retries to avoid looping on unsupported hosts.
+      const url = new URL(location.href);
+      if (url.searchParams.has('_isolation')) throw new Error('Your browser could not enable shared memory. Try a current browser.');
+      url.searchParams.set('_isolation', '1');
+      url.searchParams.set('_fresh', Date.now().toString());
+      location.replace(url);
       return;
     }
+    const cleanUrl = new URL(location.href); cleanUrl.searchParams.delete('_isolation'); history.replaceState(null, '', cleanUrl);
+    document.getElementById('message').textContent = 'Loading the parking lot…';
+    await new Promise((resolve,reject) => {
+      const script = document.createElement('script'); script.src = '$GODOT_URL';
+      script.onload = resolve; script.onerror = () => reject(new Error('Unable to download the game. Please reload.'));
+      document.head.appendChild(script);
+    });
+    const engine = new Engine(config);
+    const missing = Engine.getMissingFeatures({threads:true});
     if (missing.length) fail('Your browser or host is missing: ' + missing.join(', ') + '. Use a current desktop browser and HTTPS (or the local test server).');
     else engine.startGame({
       onProgress(current,total) { if(total) { progress.max=total; progress.value=current; } },
