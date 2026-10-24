@@ -73,7 +73,11 @@ public sealed class DrivingModel
     public double Speed, Steer;
     public Gear Gear = Gear.P;
     public bool ParkingBrake = true;
-    public int Contacts;
+    public int Contacts,KerbTouches;
+    // Rolling gently onto a kerb is normal when parking; only a fast kerb strike is a contact.
+    public const double GentleKerbSpeed=1.4;
+    // Pressing against an obstacle is one contact, not one per physics tick.
+    bool touching;
     public double Travel;
     public static Footprint Body(Pose p) { var c=p.Point(0,CarSpec.CentreZ); return new(c.X,c.Z,CarSpec.Width,CarSpec.Length,p.Yaw); }
     public static Footprint Mirror(Pose p, int side) { var c=p.Point(side*CarSpec.MirrorX,CarSpec.MirrorZ); return new(c.X,c.Z,CarSpec.MirrorWidth,CarSpec.MirrorLength,p.Yaw); }
@@ -109,9 +113,18 @@ public sealed class DrivingModel
         for(int i=0;i<steps;i++)
         {
             var next=Pose.Advance(distance/steps,Steer);
-            if(Collides(next,obstacles)) { Speed=0; Contacts++; return false; }
+            if(Collides(next,obstacles))
+            {
+                if(!touching)
+                {
+                    bool kerb=obstacles.Where(o=>Collides(next,new[]{o})).All(o=>o.Curb);
+                    if(kerb && System.Math.Abs(Speed)<=GentleKerbSpeed) KerbTouches++; else Contacts++;
+                }
+                Speed=0; touching=true; return false;
+            }
             Pose=next; Travel+=System.Math.Abs(distance/steps);
         }
+        if(touching && !Collides(Pose,obstacles,.02)) touching=false;
         return true;
     }
     public double Sensor(IReadOnlyList<Obstacle> obstacles,bool front,int sector,double range=2.0)

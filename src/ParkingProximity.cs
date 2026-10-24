@@ -35,7 +35,7 @@ public static class ParkingProximity
         Span<(double X,double Z)> scratch=stackalloc (double,double)[12];
         foreach(var obstacle in obstacles)
         {
-            if(obstacle.Curb) continue;
+            if(!obstacle.Sensed) continue;
             var box=obstacle.Shape;
             double dx=box.X-pose.X,dz=box.Z-pose.Z,cx=c*dx-s*dz,cz=s*dx+c*dz;
             double radius=Math.Sqrt(box.Width*box.Width+box.Length*box.Length)/2;

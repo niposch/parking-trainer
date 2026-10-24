@@ -44,6 +44,7 @@ public partial class ParkingGame
             return;
         }
         if(command=="pause") {Pause(true);return;}
+        if(command=="briefing") {DismissBriefing();return;}
         if(command=="camera") {CameraMode=(CameraMode+1)%2;SaveSettings();return;}
         if(command=="tutor") {ToggleHint();return;}
         if(command=="return") {EndInspection();return;}
@@ -89,7 +90,11 @@ public partial class ParkingGame
             }
             touchControls.Pointer(0,Point("brake",.5f,.25f),true);
             touchControls.Pointer(1,Point("gas",.5f,.75f),true);
-            touchControls.Pointer(2,Point("steer",.1f),true);
+            touchControls.Pointer(2,Point("steer",.6f),true);
+            Check(touchControls.Steering==0,"Steering finger lands without turning the wheel");
+            touchControls.Drag(2,Point("steer",.6f-TouchControls.SteerDeadZone*.3f));
+            Check(touchControls.Steering==0,"A resting thumb inside the steering dead zone keeps the wheel still");
+            touchControls.Drag(2,Point("steer",.15f));
             ReadPedals();
             Check(Brake>.70 && Brake<.80 && Gas>.20 && Gas<.30 && touchControls.Steering>.7,"Three fingers independently hold brake, gas and steering");
             float yaw=LookYaw;var look=GetViewport().GetVisibleRect().Size*new Vector2(.5f,.3f);

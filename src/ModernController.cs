@@ -12,11 +12,14 @@ internal sealed class ModernController : IDisposable
     public readonly float[] Axes=new float[6];
     public readonly bool[] Buttons=new bool[15];
     public string Name {get;private set;}="";
+    public ushort Vendor {get;private set;}
+    public ushort Product {get;private set;}
     public bool Connected=>pad!=IntPtr.Zero;
     public string Error {get;private set;}="";
     IntPtr pad;
     bool initialized;
     double scan;
+    readonly HashSet<string> reported=new();
     public ModernController()
     {
         if(!OperatingSystem.IsWindows()) return;
@@ -34,30 +37,43 @@ internal sealed class ModernController : IDisposable
         catch(Exception ex) when(ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException)
         {Error=ex.Message;GD.PushWarning("Controller fallback unavailable: "+Error);}
     }
-    public void Poll(double dt,bool enabled,Action<bool> connection)
+    // `handled` says whether Godot already reads a device (vendor, product, name):
+    // this driver only takes gamepads Godot cannot see, so nothing is read twice.
+    public void Poll(double dt,Func<ushort,ushort,string,bool> handled,Action<bool> connection)
     {
         if(!initialized) return;
         SDL_PumpEvents();
         SDL_UpdateGamepads();
         // Drain events; values are sampled below. Keep this DLL's queue bounded.
         SDL_FlushEvents(0,0xffff);
-        if(Connected && (!enabled || !SDL_GamepadConnected(pad)))
+        if(Connected && (handled(Vendor,Product,Name) || !SDL_GamepadConnected(pad)))
         {
-            Release();SDL_CloseGamepad(pad);pad=IntPtr.Zero;Name="";connection(false);
+            Release();SDL_CloseGamepad(pad);pad=IntPtr.Zero;Name="";Vendor=Product=0;connection(false);
         }
         scan-=dt;
-        if(!Connected && enabled && scan<=0)
+        if(!Connected && scan<=0)
         {
             scan=1;
             var ids=SDL_GetGamepads(out int count);
             try
             {
-                for(int i=0;i<count && !Connected;i++) pad=SDL_OpenGamepad((uint)Marshal.ReadInt32(ids,i*4));
+                for(int i=0;i<count && !Connected;i++)
+                {
+                    // Identify devices without opening them, so pads Godot owns are never touched.
+                    uint id=(uint)Marshal.ReadInt32(ids,i*4);
+                    ushort vendor=SDL_GetGamepadVendorForID(id),product=SDL_GetGamepadProductForID(id);
+                    string name=Marshal.PtrToStringUTF8(SDL_GetGamepadNameForID(id))??"Gamepad";
+                    if(handled(vendor,product,name))
+                    {
+                        if(reported.Add($"{vendor:x4}:{product:x4}")) GD.Print($"Controller fallback leaves {name} (VID {vendor:x4} PID {product:x4}) to Godot");
+                        continue;
+                    }
+                    pad=SDL_OpenGamepad(id);Vendor=vendor;Product=product;Name=name;
+                }
             }
             finally {SDL_free(ids);}
             if(Connected)
             {
-                Name=Marshal.PtrToStringUTF8(SDL_GetGamepadName(pad))??"Gamepad";
                 GD.Print($"Modern controller connected: {Name}; VID {SDL_GetGamepadVendor(pad):x4} PID {SDL_GetGamepadProduct(pad):x4}");
                 connection(true);
             }
@@ -100,6 +116,9 @@ internal sealed class ModernController : IDisposable
     [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern IntPtr SDL_OpenGamepad(uint id);
     [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern IntPtr SDL_GetGamepadName(IntPtr gamepad);
     [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern ushort SDL_GetGamepadVendor(IntPtr gamepad);
+    [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern ushort SDL_GetGamepadVendorForID(uint id);
+    [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern ushort SDL_GetGamepadProductForID(uint id);
+    [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern IntPtr SDL_GetGamepadNameForID(uint id);
     [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern ushort SDL_GetGamepadProduct(IntPtr gamepad);
     [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] [return:MarshalAs(UnmanagedType.I1)] static extern bool SDL_GamepadConnected(IntPtr gamepad);
     [DllImport(Library,CallingConvention=CallingConvention.Cdecl)] static extern short SDL_GetGamepadAxis(IntPtr gamepad,int axis);

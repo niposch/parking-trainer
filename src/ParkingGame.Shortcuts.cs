@@ -3,7 +3,7 @@ namespace ParkingTrainer;
 
 public partial class ParkingGame
 {
-    const string KeyboardHelp="1–4: P / R / N / D (hold brake)\nW / S: Gas / brake\nA / D: Steering\nSpace: Parking brake\nMouse: Look around\nTab: Rear / 360° camera\nV / Home: Console / forward view\nC: Look over shoulder\nZ: Centre steering\nH / T: Parking instructions\nG: Steering / fixed camera guides\nF5 / F6: Retry / new variation\nEsc: Pause / release mouse";
+    const string KeyboardHelp="1–4: P / R / N / D (hold brake)\nW / S: Gas / brake\nA / D: Steering\nSpace: Parking brake\nMouse: Look around\nTab: Rear / 360° camera\nV / Home: Console / forward view\nC: Look over shoulder\nZ: Centre steering\nH / T: Parking instructions\nF: Correction plan\nG: Steering / fixed camera guides\nF5 / F6: Retry / new variation\nEsc: Pause / release mouse";
     PanelContainer shortcutPanel=null!;
     void SetupShortcutPanel()
     {

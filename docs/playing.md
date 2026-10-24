@@ -2,7 +2,7 @@
 
 Run `ParkingPractice.exe` from the runtime bundle, or `Launch.cmd` from the source repository. All driving is **first person**.
 
-Choose the exercise and select **Drive / Resume**. Every scenario starts in **P with the parking brake applied**. Hold L2/S, select R or D, then explicitly release the parking brake with right-stick click/Space. Release the service brake gently to creep. Resuming does not change gear or release the parking brake. Park only after stopping: select P, then apply the parking brake.
+Choose the exercise and select **Drive / Resume**. Every scenario starts in **P with the parking brake applied**. Hold L2/S, select R or D, then explicitly release the parking brake with Y/Space. Release the service brake gently to creep. Resuming does not change gear or release the parking brake. Park only after stopping: select P, then apply the parking brake.
 
 The mouse is captured while driving and moves the driver's head. Escape pauses and releases it for menus; losing application focus also pauses. Retry/new variation returns to pause home. Start practice in the scenario selector captures the mouse immediately while the car remains secured.
 
@@ -13,23 +13,24 @@ The mouse is captured while driving and moves the driver's head. Escape pauses a
 | Turn steering wheel | Left stick | A / D |
 | Look around | Right stick | Move mouse |
 | Look around with mouse | Steam mouse/trackpad output | Move mouse |
-| Select R / D while stopped and braked | Left / right shoulder | 2 / 4 |
-| Cycle P → R → N → D while stopped and braked | Bottom face button (A mapping) | 1 P / 2 R / 3 N / 4 D |
-| Parking brake | Right-stick click | Space |
+| Select D / R / P while stopped and braked | RB / LB / A | 4 / 2 / 1 (3 = N) |
+| Parking brake | Y (top face button) | Space |
 | Return steering toward centre | Hold left-stick click | Hold Z |
-| Shoulder view / forward view | Mouse / right stick | C / Home |
-| Look down at center console | Right face button (B mapping) | V |
-| Rear camera + sensors ↔ surround camera + sensors | Top face button (Y mapping) | Tab |
-| Expand/collapse parking instructions (`?`) | Left face button (X mapping) | H or T |
-| Pause / resume | Start | Escape |
-| Open menu | Back | F1 |
+| Look forward | Right-stick click | Home |
+| Glance at the camera screen (press again: forward) | B (right face button) | V |
+| Look over the shoulder (press again: forward) | View / Back | C |
+| Rear camera + sensors ↔ surround camera + sensors | X (left face button) | Tab |
+| Expand/collapse parking instructions (`?`) | D-pad up | H or T |
+| Correction plan (Hints mode) | D-pad down | F |
+| Pause / resume / back | Start (B goes back in menus) | Escape |
+| Report: back to cockpit · scrub replay · zoom | A or B · D-pad left/right · LB / RB | Enter · ← / → · mouse wheel |
 | Retry / new variation | Pause menu | F5 / F6 |
 | Watch demonstration | Pause menu | F2 |
 | Fixed / steering rear guides | Pause menu | G |
 
 The default steering mode **turns and holds**: hold the stick toward a side to turn the wheel; release it to hold the angle. This avoids snapping the wheels straight while stopped. The menu also offers stick-angle steering. Use the physical steering wheel as the angle cue; hold left-stick click/Z to return toward centre.
 
-Speed, gear and the amber `(P)` parking-brake indicator are on the instrument panel behind the wheel. The camera and sensor readout are in the center console. Use B/V to glance down at it, then mouse/right stick/Home to look forward. Mirrors are mounted on the car and can be inspected with head-look controls. **D-pad and arrow keys do not control the camera**; D-pad still navigates menus. No floating mirror, speed, or pedal panels are shown while driving.
+Speed, gear and the amber `(P)` parking-brake indicator are on the instrument panel behind the wheel. The camera and sensor readout are in the center console. Use B/V to glance down at it and press it again (or right-stick click/Home) to look forward. Mirrors are mounted on the car and can be inspected with head-look controls. **D-pad and arrow keys do not control the camera**; the D-pad navigates menus, and while driving D-pad up/down toggle the instructions and the correction plan. No floating mirror, speed, or pedal panels are shown while driving.
 
 Six visual sensor zones (front left/centre/right and rear left/centre/right) always appear beside the active camera feed. Each has four discrete steps: below **1.6 m, 1.0 m, 0.60 m and 0.30 m**, progressing from green to red. Each zone uses its own measured bumper-sensor distance. There is no sensor-only mode. Low curbs/sidewalks are excluded from sensor readings in this practice profile; they still cause physical contact.
 
@@ -73,7 +74,7 @@ Options → On-screen controls offers Auto, On and Off on Windows and web. Auto 
 
 Hold/drag the left pad to steer. Gas and brake are independent: touch near the top for full pressure, near the bottom for light pressure; release to let go. Hold the brake while selecting P/R/N/D; P BRAKE is a separate toggle. Drag elsewhere to look. Multiple fingers can hold steering, pedals and look independently. Menu pauses and releases held controls; View changes the console camera. After parking, drag to orbit, use +/− to zoom and Return to cockpit to continue.
 
-The hint starts as a single `?` icon. Tap/click the icon, tap the touch toolbar’s `?`, or press H or T / controller X to expand or collapse it. Collapse preserves tutor cues; Options → Tutor turns them off. Collapse state persists. Menus scroll/reflow on narrow screens. Rendering fills the window at any aspect ratio without stretching the world or adding black bars.
+The hint starts as a single `?` icon. Tap/click the icon, tap the touch toolbar’s `?`, or press H or T / controller D-pad up to expand or collapse it. Collapse preserves tutor cues; Options → Tutor turns them off. Collapse state persists. Menus scroll/reflow on narrow screens. Rendering fills the window at any aspect ratio without stretching the world or adding black bars.
 
 
 Use **Full screen** on the touch toolbar to hide browser chrome where supported; tap **Exit full** to return. The display option is also available in Options. Browser controls use screen-density-aware sizing, with larger pedals and steering regions. Installing/adding the PWA to the home screen provides another way to launch without the address bar; browser support varies.
@@ -86,3 +87,61 @@ Menus support finger swipes over their contents, including buttons; release with
 The desktop shortcut list stays visible during driving and menus, on a mostly transparent background. It is not the parking-instructions panel: **H toggles the same instructions as `?`**, leaving the shortcut list visible. Menus reserve space beside the list (or above it in narrow desktop windows). Touch mode omits the keyboard list.
 
 The surround display now emulates a car-centred bird’s-eye view with uniform distance scale. It shows nearby obstacle footprints, your car and reverse guides without the previous stitched-camera seams and stretched cars. It is a virtual parking aid, not a measured reproduction of an OEM camera system or its blind spots. The separate physical reverse camera and distance indicators remain available together.
+
+## Scenarios, coaching and the parking report
+
+**Esc → Choose scenario** offers seven parking types:
+
+| Type | Space difficulty controls | Notes |
+| --- | --- | --- |
+| Reverse parallel | Gap length 8.00 / 7.00 / 6.45 m | Kerb on the right, or the left for a one-way street |
+| Reverse 90° bay | Bay width 2.90 / 2.55 / 2.30 m | Optional row of cars opposite: aisle 7.0 / 6.0 / 5.4 m |
+| Forward 90° bay | Bay width as above | Optional opposite row |
+| Forward 60° angled bay | Bay width as above | Entered forward in the direction of travel; optional opposite row |
+| Reverse into a garage | Garage width 3.00 / 2.70 / 2.50 m | Walls on three sides; mirrors span 2.22 m |
+| Reverse around a corner | Side-road width 7.0 / 6.0 / 5.2 m | Chamfered kerb corner; finish parallel to the side-road kerb |
+| Turn in the road | Road width 9.0 / 7.8 / 7.0 m | Multi-point turn; finish in the opposite lane |
+
+Each range starts at the value shown. **Task** chooses **Park**, **Fix an off-centre park** (start off-centre and crooked, then correct it) or **Drive out** (leave the space and stop in the green lane zone). The fix-it task is available for parallel, both 90° bays and the garage; drive-out for parallel, all bays and the garage. **Obstacles: Some / Busy** adds hazards such as a concrete pillar at the bay entrance, a low post or tow bar below the sensors, a neighbour over the line, a bike rack, a trolley, bins, signposts and parked cars along a road. A hazard never shrinks the advertised space, and every layout is still generated with a collision-checked solution. **Surprise me** on the pause home or scenario page starts a random combination.
+
+**Coaching** sets the help level:
+
+- **Guided**: tutor panel, landmark highlight, live coaching and automatic correction plans.
+- **Hints only**: the tutor stays available, but coaching appears only after you stop. Press **F** to see a correction plan.
+- **Test**: no tutor, coaching, target outline, landmark, demonstration or next-step prompt. The report says *test passed* only if the final position is accepted and there was no contact.
+
+Live coaching (cyan-bordered panel) compares your drive-up stopping point and your line with the demonstration, warns about speed above creeping pace, and gives a one-time tip about steering at a standstill. Close to the target it shows the offset as *cm left/right of centre*, *cm too far forward/back* and nose angle. If you stop off-centre, Guided mode computes a **correction plan**: a straight pull-out, two opposite steering arcs and a final straight, listed step by step with the gear and wheel position and drawn on the ground as a cyan line. This is the same construction as the fix-it task. When no simple two-arc correction fits, the coach says to pull out further and re-park.
+
+After you secure the car, the inspection view shows a **parking report**. It contains a grade (good / acceptable / re-park), left/right and depth offsets, angle, line or wall gaps on each side, the kerb or end-of-bay gap, and driver/passenger door clearance (about 0.6 m to open). It also lists contacts, direction changes, top speed, time and steering at a standstill. A top-down replay shows your path (blue forward, orange reverse) against the dashed demonstration. Its view is oriented with the target's forward direction up, so left and right match the text.
+
+## Desktop onboarding
+
+On first launch on a desktop, the pause menu opens on **How to drive**, which is also on pause home. While driving, a key bar at the bottom shows your pedals, the steering-wheel position, the selected gear and the parking brake live. A prompt above it gives the next step: hold the brake, select a gear, release the parking brake, ease off to creep, and finally P and the parking brake. After controller input, both show controller labels (LT/RT, LB/RB, R3). **Options → Key bar & next-step hints** turns them off; Test mode hides the prompt.
+
+## World cues, briefings and contacts
+
+**Scenario briefing.** When you start a new kind of scenario (type, task, side, coaching level or aisle), a card explains the goal, which gear to start in (for example "First drive forward (D) along the aisle… Then select R and reverse in"), how to finish, and any hazards. Dismiss it with Enter, the bottom face button, or a tap; it also closes once you start moving. Retries and new variations of the same kind skip it.
+
+**3D cues** (Options → 3D cues, on by default; hidden in Test mode):
+
+- **Checkpoints**: a cyan ring with a post at the next point where the reference solution changes gear or steering. In Guided mode it also shows a ghost outline of the car and a label such as "Stop · select R · wheel at full lock left". The drive-up end is a large ring ("Stop around here"), because the stopping point is your choice. If you stop off-centre, the checkpoints follow the correction plan instead. If you drift more than about 1.2 m from the reference line, they hide rather than steer you back to a line that no longer fits.
+- **Predicted wheel tracks** (Guided): where each wheel goes (yellow rear, white front) and where the front corners swing (red) over the next 3 m with the current steering, in D or R.
+- **Clearance tag** (Guided): the distance from the body or a mirror to the nearest obstacle point within 1 m, including kerbs and low objects that the sensors ignore.
+
+**Hints panel.** The parking instructions now start expanded. On desktop the panel header shows its toggle key (`[H: hide]`, or the controller's button), and the collapsed `?` icon has a small key badge.
+
+**Contacts.** A contact now shows a red banner naming what touched what (for example "CONTACT · rear bumper hit the kerb"), red screen edges that pulse while you stay pressed against it, a short camera jolt and a thud. It also rumbles the controller or vibrates a phone, and puts a red marker at the touching point. Pressing against the same obstacle counts as **one** contact; backing away and touching again counts another. **Rolling onto a kerb at creeping speed (up to about 5 km/h) is normal parking**: it shows a calm note, is listed in the report as a gentle kerb touch, and does not count as a contact or fail a test. Hitting a kerb faster is a contact. A body within 3 cm of a bay line is graded as re-park.
+
+**Report replay.** The report's top-down replay now follows the car, pauses briefly at each change of direction and closes in on the target as the car arrives. A progress bar marks the direction changes; ← / → (or the D-pad) scrub through it.
+
+**Touch steering.** The steering pad is now relative to where your thumb lands, with a dead zone of about 15% of its travel. You can rest a thumb on it without turning the wheel. While you hold it, the resting zone is shaded.
+
+## Controllers
+
+- **Desktop:** any gamepad Godot recognises works directly. The bundled SDL 3.4.16 driver now takes **any gamepad Godot cannot read** (such as the 2026 Steam Controller without Steam Input), even if other pads are connected. It identifies devices by vendor/product ID before opening them, so a pad is never read twice. With Steam running, Steam Input presents the Steam Controller as a virtual Xbox 360 pad, which Godot reads directly.
+- **Browser:** uses the browser's Gamepad API. Press a button to connect. Controller setup lists each browser gamepad and whether the browser recognised its layout ("standard"). With a non-standard layout, use **Bind L2 brake**, **Bind R2 gas** and **Bind steering** (push the stick fully left).
+- Prompts and the key bar use the button names of your controller family: Xbox style (RT/LT/LB/RB/A), PlayStation (R2/L2/L1/R1/Cross) or Nintendo (ZR/ZL/L/R/B). The names are matched from the controller's reported name.
+
+## Controller map (24 October 2026)
+
+The controller layout was reworked so that each driving function has exactly one button, with no button doing different things depending on hidden state. Gears are direct (A = P, LB = R, RB = D; neutral is keyboard-only), the parking brake moved from the right-stick click to Y so looking around cannot release it, and the camera glances toggle back to the forward view. Start is the only menu button; View is now the over-the-shoulder glance. In menus, B goes back; in the briefing, A or B closes it; in the report, A or B returns to the cockpit, the D-pad scrubs the replay and LB/RB zoom. Steam Input layouts that send a key alongside a button (for example B and Esc) no longer trigger an action twice: the copy from the other device type is ignored for 0.4 s.

@@ -60,7 +60,7 @@ public partial class ParkingGame
             Check(CameraMode==0 && rearRect.Visible && sensorGraphic.Visible,"Rear camera and sensors together");
             foreach(Exercise exercise in Enum.GetValues<Exercise>())
             foreach(Difficulty difficulty in Enum.GetValues<Difficulty>())
-            foreach(bool mirror in exercise==Exercise.Parallel?new[]{false}:new[]{false,true})
+            foreach(bool mirror in new[]{false,true})
             {
                 Exercise=exercise;Difficulty=difficulty;MirrorBay=mirror;NewScenario(false);StartDemo();
                 int steps=0;while(Demo && steps++<4000) RunDemo(.1);

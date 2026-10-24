@@ -78,8 +78,12 @@ internal static class PlayerCabin
                 if(edges.TryGetValue(key,out var e)) edges[key]=(e.A,e.B,e.Count+1);else edges[key]=(a,b,1);
             }
         }
-        // Convex rear-door aperture, cut directly out of the original side panel.
-        Vector2[] hole={new(-.89f,.96f),new(-.89f,1.34f),new(-.45f,1.34f),new(.41f,.96f)};
+        // Convex apertures cut directly out of the original side panel, as (z, y):
+        // a rear-door window whose frame rakes back like a real door, a door post,
+        // then a small fixed quarter window below a solid C-pillar that follows the hatch.
+        Vector2[][] holes={
+            new[]{new Vector2(-.89f,.96f),new(-.89f,1.33f),new(-.18f,1.30f),new(.02f,.96f)},
+            new[]{new Vector2(.11f,.96f),new(-.026f,1.191f),new(.347f,.96f)}};
         float Cross(Vector2 a,Vector2 b)=>a.X*b.Y-a.Y*b.X;
         List<(Vector3 P,Vector2 U)> Clip(List<(Vector3 P,Vector2 U)> polygon,Vector2 a,Vector2 b,bool inside)
         {
@@ -119,10 +123,20 @@ internal static class PlayerCabin
                 bool side=Math.Abs(n.X)>.85f && poly.All(v=>Math.Abs(v.P.X)>.60f);
                 if(side)
                 {
-                    var remainder=poly;
-                    for(int k=0;k<hole.Length && remainder.Count>=3;k++)
-                    {Solid(Clip(remainder,hole[k],hole[(k+1)%hole.Length],false));remainder=Clip(remainder,hole[k],hole[(k+1)%hole.Length],true);}
-                    if(remainder.Count>=3) Emit(glass,remainder);
+                    var pieces=new List<List<(Vector3 P,Vector2 U)>> {poly};
+                    foreach(var hole in holes)
+                    {
+                        var outside=new List<List<(Vector3 P,Vector2 U)>>();
+                        foreach(var piece in pieces)
+                        {
+                            var remainder=piece;
+                            for(int k=0;k<hole.Length && remainder.Count>=3;k++)
+                            {outside.Add(Clip(remainder,hole[k],hole[(k+1)%hole.Length],false));remainder=Clip(remainder,hole[k],hole[(k+1)%hole.Length],true);}
+                            if(remainder.Count>=3) Emit(glass,remainder);
+                        }
+                        pieces=outside.Where(p=>p.Count>=3).ToList();
+                    }
+                    foreach(var piece in pieces) Solid(piece);
                 }
                 else Solid(poly);
             }

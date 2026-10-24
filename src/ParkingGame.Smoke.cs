@@ -77,7 +77,7 @@ public partial class ParkingGame
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.A,Pressed=true});await PhysicsFrames(3);
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.A,Pressed=false});await PhysicsFrames(3);
             Check(MenuPage=="scenarios" && Paused,"Controller accept opens scenario selection");
-            Check(!baySideChoices.Visible,"Parallel parking hides the bay-side controls");
+            Check(baySideChoices.Visible && !aisleChoices.Visible,"Parallel parking offers a kerb side but no aisle choice");
             var currentScene=Scene;var currentPose=Car.Pose;
             exerciseCards[2].EmitSignal(Godot.Button.SignalName.Pressed);difficultyButtons[2].EmitSignal(Godot.Button.SignalName.Pressed);baySideButtons[1].EmitSignal(Godot.Button.SignalName.Pressed);
             Check(Scene==currentScene && Car.Pose==currentPose && !MirrorBay,"Editing scenario choices preserves the current attempt until Start");
@@ -110,7 +110,8 @@ public partial class ParkingGame
             Check(LookYaw<-.05 && LookPitch>0 && CaptureDrivingMouse,"Mouse look activates in driving mode");
             if(DisplayServer.GetName()!="headless") Check(Input.MouseMode==Input.MouseModeEnum.Captured,"Windows cursor is captured while driving");
             float unchangedYaw=LookYaw,unchangedPitch=LookPitch;
-            foreach(var direction in new[]{JoyButton.DpadLeft,JoyButton.DpadRight,JoyButton.DpadUp,JoyButton.DpadDown})
+            // D-pad up/down now toggle instructions and the correction plan; none of it moves the camera.
+            foreach(var direction in new[]{JoyButton.DpadLeft,JoyButton.DpadRight})
             {
                 Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=direction,Pressed=true});await PhysicsFrames(3);
                 Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=direction,Pressed=false});await PhysicsFrames(3);
@@ -171,20 +172,21 @@ public partial class ParkingGame
             Check(Car.Gear==Gear.P && Car.ParkingBrake && Car.Speed==0,"New variation resets gear and parking brake");
             foreach(Exercise exercise in Enum.GetValues<Exercise>())
             foreach(Difficulty difficulty in Enum.GetValues<Difficulty>())
-            foreach(bool mirrored in exercise==Exercise.Parallel?new[]{false}:new[]{false,true})
+            foreach(bool mirrored in new[]{false,true})
             {
                 MirrorBay=mirrored;Exercise=exercise;Difficulty=difficulty;NewScenario(false);StartDemo();
                 Check(Car.Gear==Gear.D && Car.Pose==Scene.Spawn,$"{exercise}/{difficulty}/{(mirrored?"right":"left")} demonstration starts on the approach in D");
                 bool sawReverse=false;int safety=0;
                 while(Demo && safety++<4000) {RunDemo(.1);sawReverse|=Car.Gear==Gear.R;}
                 Check(!Demo && Scene.PositionError(Car.Pose)<.02 && Car.Gear==Gear.P && Car.ParkingBrake,$"{exercise}/{difficulty}/{(mirrored?"right":"left")} demonstration finishes parked and secured");
-                if(exercise!=Exercise.ForwardBay) Check(sawReverse,$"{exercise}/{difficulty}/{(mirrored?"right":"left")} demonstration shifts from approach into reverse parking");
+                if(exercise is not (Exercise.ForwardBay or Exercise.AngledBay)) Check(sawReverse,$"{exercise}/{difficulty}/{(mirrored?"right":"left")} demonstration shifts from approach into reverse parking");
             }
             await PhysicsFrames(4);
             passed+=await CheckDemoSmoothness();
             passed+=await CheckTouchControls();
             passed+=await CheckParkingAssist();
             passed+=await CheckPhoneFixes();
+            passed+=await CheckTeachingTools();
             GD.Print($"SMOKE COMPLETE: {passed} runtime input/UI/demonstration checks passed.");GetTree().Quit();
         }
         catch(Exception error) {GD.PushError("SMOKE FAILED: "+error);GetTree().Quit(1);}

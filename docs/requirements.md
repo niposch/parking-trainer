@@ -236,3 +236,26 @@ These owner requests supersede the earlier camera-composite implementation prefe
 - Remove the centre mirror support rod and lower/move the housing inboard enough to keep it inside the windscreen opening.
 - Returning from landscape to portrait must restore the same readable menu and control scale, including repeated rotations and browser viewport/DPI changes.
 - Desktop keyboard shortcuts remain visible, including in menus, with a faint, mostly transparent background. **H expands/collapses the parking instructions behind `?`**, not the shortcut list. Keep T/X as existing alternatives; show the sensible driving, camera, hint and pause/retry keys.
+
+## Teaching expansion — 24 October 2026
+
+Owner goal: "play this game and you'll know how to park no matter what". The tool should also help learners adjust when they stop a little too far left or right in a space, add more obstacles, and make the desktop controls as clear as the touch controls.
+
+- **SCN-1:** Add forward 60° angled bays, reversing into a garage, reversing around a corner and turning in the road, alongside the existing three types. Every type except turning in the road offers a left/right side; parallel parking gains a left-side (one-way street) variant.
+- **SCN-2:** Add tasks: *fix an off-centre park* (start in the space, off-centre and crooked) and *drive out* (leave the space into a lane zone). Unsupported combinations fall back to parking.
+- **SCN-3:** Bay rows may have a row of cars opposite, with aisle width by difficulty, requiring multi-point entries. Optional hazards add pillars, low objects below the sensors, crooked neighbours, protruding tow bars and bike racks, trolleys, bins, signposts and parked road cars. Hazards never shrink the advertised space; every generated layout keeps a collision-checked feasibility witness that ends on the target. Low objects (below 0.45 m) collide but are not sensed.
+- **TUT-5:** Grade the final position in the target's own frame: lateral (left/right of centre), depth and angle, with line, wall and kerb gaps, door clearance and habits (contacts, direction changes, speed, steering at a standstill). Show a top-down replay against the demonstration.
+- **TUT-6:** Offer Guided, Hints-only and Test coaching. Live coaching compares the setup point and line with the demonstration. When the learner stops off-centre, compute and draw a collision-checked correction plan (pull out straight, two opposite arcs, straighten) and list it step by step.
+- **UX-4:** Desktop onboarding: a how-to-drive page on first launch, a live key bar for pedals, wheel, gear and parking brake, and a next-step prompt. Both follow the last-used input device (keyboard or controller). The prompt and key bar can be turned off; Test mode hides the prompt.
+
+## Follow-up: world cues, briefings, contacts and controllers — 24 October 2026
+
+- **TUT-7:** Show in-world cues: next checkpoint (ring, post, ghost outline, instruction) derived from the reference solution or the current correction plan; predicted wheel and front-corner tracks for the current steering; nearest-obstacle clearance including unsensed objects. Fade by coaching level; hide in Test mode; user toggle.
+- **TUT-8:** The report replay follows the replay car, pauses at direction changes, closes in on the target and supports scrubbing.
+- **TUT-9:** Brief each new kind of scenario with its goal, first gear and direction, finish condition and hazards.
+- **FB-1:** Contacts must be impossible to miss (banner naming part and obstacle, screen edges, jolt, sound, rumble/vibration, marker) and count once per touch, not per physics tick. Rolling onto a kerb at up to 1.4 m/s is a gentle kerb touch, not a contact, with no damage effects. Treat a body within 3 cm of a bay line as needing a re-park.
+- **UX-5:** Parking instructions start expanded; desktop shows the toggle key. Touch steering is relative to the landing point with a dead zone so a thumb can rest on it.
+- **INP-3:** Desktop: use the SDL 3.4.16 driver for any gamepad Godot cannot read, never for one it already reads. Web: rely on the Gamepad API, report layout recognition, and allow pedal and steering-axis rebinding. Label prompts by controller family.
+- **VEH-2:** Rear side glass: a rear-door window with a raked rear frame, a door post and a fixed quarter window under a solid C-pillar, as on a typical hatchback.
+
+- **INP-4 (24 October 2026):** Controller map without overlaps: Start menu; A/LB/RB select P/R/D directly; Y parking brake; X camera screen; B console glance and View shoulder glance (each toggles back to forward); right-stick click looks forward; L3 hold centres the wheel; D-pad up/down toggle instructions and the correction plan. In menus B goes back; in the report A/B return, the D-pad scrubs and LB/RB zoom. Duplicate copies of one press from another device type (Steam Input key plus button) are ignored for every toggle.

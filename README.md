@@ -10,18 +10,23 @@ Double-click **Launch.cmd**, or run `builds/ParkingPractice/ParkingPractice.exe`
 
 For Steam Input, add `builds/ParkingPractice/ParkingPractice.exe` as a non-Steam game. Set **Start In** to its containing folder and use an analog **Gamepad** layout. If needed, set launch options to `--path "C:\Users\Nickp\Development\parking-trainer\builds\ParkingPractice"`. Launch through Steam and press a controller button before choosing Drive.
 
-See [controls and playing notes](docs/playing.md). Use **Esc → Choose scenario** for parking type, space difficulty and left/right bay side, or **Esc → Options** for display and control settings. Scenarios now start before the space, with a varied lateral offset and heading: drive up in D and choose your own setup position.
+See [controls and playing notes](docs/playing.md). Use **Esc → Choose scenario** for parking type, task, space difficulty, side, aisle, obstacles and coaching mode, or **Esc → Options** for display and control settings. Scenarios now start before the space, with a varied lateral offset and heading: drive up in D and choose your own setup position.
 
-Scenarios start in P with the parking brake on. Hold L2/S, select D for the approach, then release the parking brake with right-stick click/Space. Mouse look is captured while driving; Escape releases it. The pause menu includes a live pedal input test and rebinding. Steam keyboard/mouse layouts also support left-click gas/right-click brake as digital fallbacks; use a Gamepad layout for analog triggers.
+Scenarios start in P with the parking brake on. Hold L2/S, select D for the approach, then release the parking brake with Y/Space. Mouse look is captured while driving; Escape releases it. The pause menu includes a live pedal input test and rebinding. Steam keyboard/mouse layouts also support left-click gas/right-click brake as digital fallbacks; use a Gamepad layout for analog triggers.
 
 ## Included
 
 - First-person cockpit, head look and shoulder view; no chase camera.
 - Automatic creep, independent gas/brake, P/R/N/D, parking brake, finite steering rate, collision stopping.
-- Procedural reverse parallel, reverse 90° bay and forward 90° bay exercises; repeatable variations, three space difficulties, and a varied forward approach before every maneuver.
+- Seven procedural parking types: reverse parallel, reverse and forward 90° bays, forward 60° angled bays, reversing into a garage, reversing around a corner and turning in the road. Every type has a left/right side, three space difficulties and a varied forward approach.
+- Three tasks: park, fix an off-centre park, and drive out. Optional obstacles (pillars, low posts below the sensors, crooked neighbours, tow bars, bike racks, trolleys, bins, signposts) and a narrow aisle with cars opposite. **Surprise me** picks a random combination.
+- Graded parking report after securing the car: left/right and depth offsets in centimetres, angle, line/kerb/wall gaps, door clearance, contacts and habits, with a top-down replay of your path against the demonstration.
+- Guided / Hints only / Test coaching: live tips on the approach and manoeuvre, and a computed correction plan drawn as a cyan line when you stop off-centre (F in Hints mode).
 - Physically mounted mirrors and center-console camera/surround display; minimal digital speed, gear and parking-brake instruments behind the steering wheel.
 - Fixed/steering rear guides, stable emulated bird’s-eye surround view, lower-pitched front/rear parking beepers with a volume control.
-- Always-visible translucent desktop shortcuts and collapsible tutor instructions (H / T / controller X / Hint), landmark highlight, first-person demonstrations and a paused teaching map.
+- Always-visible translucent desktop shortcuts and collapsible tutor instructions (H / T / controller D-pad up / Hint), landmark highlight, first-person demonstrations and a paused teaching map.
+- In-world cues: checkpoint rings with instructions, predicted wheel tracks and clearance tags; a briefing card for each new kind of scenario; unmistakable contact feedback.
+- Desktop onboarding: a **How to drive** page on first launch, a live key bar (pedals, wheel, gear, parking brake) and a next-step prompt. Both switch to controller labels after controller input.
 - Six stepped bumper sensor indicators and four independent lateral bars on the console and automatic third-person inspection after securing the car.
 - Bundled SDL 3.4.16 compatibility driver for the 2026 Steam Controller; the installed Godot remains unchanged.
 - Diagram-based scenario selection; separate Options and controller setup pages; fullscreen, borderless fullscreen and windowed modes; field-of-view, eye-height and dead-zone settings.

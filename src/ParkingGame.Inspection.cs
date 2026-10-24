@@ -11,6 +11,7 @@ public partial class ParkingGame
     {
         Inspection=true;Demo=false;Car.Speed=0;Gas=0;Brake=1;
         orbitYaw=-.65f;orbitPitch=.65f;orbitDistance=6.5f;
+        FixPlan=null;ShowFixPlan(null);BuildReport();
         UpdateMouseCapture();
     }
     void EndInspection()

@@ -8,7 +8,7 @@ public partial class ParkingGame
     Camera3D rearCamera=null!,mapCamera=null!;
     Camera3D[] mirrorCameras=new Camera3D[3];
     Camera3D surroundCamera=null!;
-    MeshInstance3D guideMesh=null!;
+    MeshInstance3D guideMesh=null!,fixMesh=null!;
     Label3D landmark=null!;
     internal static ShaderMaterial FlipImage()=>new() { Shader=new Shader {Code="shader_type canvas_item; void fragment(){ COLOR=texture(TEXTURE,vec2(1.0-UV.x,UV.y)); }"} };
     SubViewport View(int width,int height,out Camera3D camera,uint layers=35)
@@ -33,6 +33,7 @@ public partial class ParkingGame
         mapViewport=View(700,580,out mapCamera,35);mapCamera.Projection=Camera3D.ProjectionType.Orthogonal;mapCamera.Size=25;
         mapCamera.Position=new(1,28,0);mapCamera.RotationDegrees=new(-90,0,0);
         guideMesh=new MeshInstance3D {Layers=4,CastShadow=GeometryInstance3D.ShadowCastingSetting.Off};vehicle.AddChild(guideMesh);
+        fixMesh=new MeshInstance3D {Layers=1,CastShadow=GeometryInstance3D.ShadowCastingSetting.Off};AddChild(fixMesh);
         landmark=new Label3D {Text="◉",FontSize=80,PixelSize=.0035f,Modulate=new("d4ff9e"),Billboard=BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest=false,OutlineSize=10,OutlineModulate=new("23332a"),Layers=1};AddChild(landmark);
     }
@@ -85,9 +86,8 @@ public partial class ParkingGame
         surroundViewport.RenderTargetUpdateMode=CameraMode==1&&!Paused?SubViewport.UpdateMode.Always:SubViewport.UpdateMode.Disabled;
         mapViewport.RenderTargetUpdateMode=mapRect.IsVisibleInTree()?SubViewport.UpdateMode.Always:SubViewport.UpdateMode.Disabled;
         UpdateGuides();
-        var reference=Scene.Obstacles.First(o=>!o.Curb);
-        var corner=new Pose(reference.Shape.X,reference.Shape.Z,reference.Shape.Yaw).Point((Scene.Mirrored?1:-1)*(reference.Shape.Width/2-.09),reference.Shape.Length/2+.025);
-        landmark.Position=new((float)corner.X,.68f,(float)corner.Z);landmark.Visible=Tutor&&!Inspection;
+        if(Scene.Landmark is {} corner) landmark.Position=new((float)corner.X,.68f,(float)corner.Z);
+        landmark.Visible=Scene.Landmark!=null&&Tutor&&Mode==TrainingMode.Guided&&!Inspection;
     }
     double lastGuide=double.NaN;bool lastDynamic;
     void UpdateGuides()

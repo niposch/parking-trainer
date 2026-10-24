@@ -8,7 +8,7 @@ Double-click **Launch-Web.cmd**. It starts a localhost-only server and opens the
 
 Use a current desktop Chrome/Edge or Firefox. Click **Continue driving** to request mouse capture and unlock audio. Esc releases the mouse and pauses. Use Options → Display for browser fullscreen; the browser can also exit fullscreen with Esc. Fullscreen is not restored automatically after loading.
 
-Press a controller button while the page is focused so the browser can discover it. Standard gamepads are the target: RT gas, LT brake, left stick steering, right stick look. LB selects R, RB selects D; hold the brake when changing gear. Right-stick click toggles the parking brake. D-pad navigates menus only. Controller setup includes pedal readouts and rebinding. The special Windows Steam Controller driver is excluded.
+Press a controller button while the page is focused so the browser can discover it. Standard gamepads are the target: RT gas, LT brake, left stick steering, right stick look. RB selects D, LB selects R, A selects P; hold the brake when changing gear. Y toggles the parking brake, X the camera screen, B glances at it, View looks over the shoulder, right-stick click looks forward. The D-pad navigates menus; while driving, D-pad up/down toggle the instructions and the correction plan. See the controller map in [playing.md](playing.md). Controller setup includes pedal readouts and rebinding. The special Windows Steam Controller driver is excluded.
 
 Keyboard fallback: W/S gas/brake, A/D steering, 1/2/3/4 P/R/N/D, Space parking brake, mouse look, Tab camera mode, V look at console, C shoulder view, Home forward. Every scenario starts in P with the parking brake applied.
 
