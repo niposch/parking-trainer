@@ -1,57 +1,95 @@
-# Parking Practice — prototype 01
+# Parking Practice
 
-A first-person parking practice game for Windows and experimental desktop browsers, written in C# for Godot 4.7.2 Mono. Uses **free CC0 assets only**, with no vehicle brands.
+A first-person parking trainer: drive up, line up and park a generic car using its mirrors, reversing camera and parking sensors, with a tutor that shows what went wrong and how to fix it. Written in C# for Godot 4.7.2 Mono. Free CC0 assets only, no vehicle brands.
 
-Play in your browser: **[niposch.de/parking-trainer](https://niposch.de/parking-trainer/)**. Find browser tools and games at **[Live projects](https://niposch.de/live/)**.
+**Play in your browser: [niposch.de/parking-trainer](https://niposch.de/parking-trainer/)** · more projects at [niposch.de/live](https://niposch.de/live/)
 
-## Play
+## What you can practise
 
-Double-click **Launch.cmd**, or run `builds/ParkingPractice/ParkingPractice.exe` from its folder. The local runtime bundle uses the installed Godot version and the machine's .NET 8 runtime; it is not a standalone installer.
+| Parking type | Notes |
+| --- | --- |
+| Reverse parallel | Kerb on the right, or the left for a one-way street |
+| Reverse 90° bay | Optional row of cars opposite, with a narrow aisle |
+| Forward 90° bay | Optional opposite row |
+| Forward 60° angled bay | Entered in the direction of travel |
+| Reverse into a garage | Walls on three sides |
+| Reverse around a corner | Finish parallel to the side road's kerb |
+| Turn in the road | Multi-point turn into the opposite lane |
 
-For Steam Input, add `builds/ParkingPractice/ParkingPractice.exe` as a non-Steam game. Set **Start In** to its containing folder and use an analog **Gamepad** layout. If needed, set launch options to `--path "C:\Users\Nickp\Development\parking-trainer\builds\ParkingPractice"`. Launch through Steam and press a controller button before choosing Drive.
+Each type has a left/right side and three space sizes (spacious, standard, tight). Every scenario starts on a drive-up approach, so you choose where to stop and set up. You can also pick a task:
 
-See [controls and playing notes](docs/playing.md). Use **Esc → Choose scenario** for parking type, task, space difficulty, side, aisle, obstacles and coaching mode, or **Esc → Options** for display and control settings. Scenarios now start before the space, with a varied lateral offset and heading: drive up in D and choose your own setup position.
+- **Park**: drive up and park.
+- **Fix an off-centre park**: start badly parked and correct it.
+- **Drive out**: leave the space without touching anything.
 
-Scenarios start in P with the parking brake on. Hold L2/S, select D for the approach, then release the parking brake with Y/Space. Mouse look is captured while driving; Escape releases it. The pause menu includes a live pedal input test and rebinding. Steam keyboard/mouse layouts also support left-click gas/right-click brake as digital fallbacks; use a Gamepad layout for analog triggers.
+Optional obstacles include pillars, low posts below the sensors, crooked neighbours, tow bars, bike racks, trolleys and bins. **Surprise me** picks a random combination. Every layout is generated together with a collision-checked solution, which the demonstration drives.
 
-## Included
+## How it teaches
 
-- First-person cockpit, head look and shoulder view; no chase camera.
-- Automatic creep, independent gas/brake, P/R/N/D, parking brake, finite steering rate, collision stopping.
-- Seven procedural parking types: reverse parallel, reverse and forward 90° bays, forward 60° angled bays, reversing into a garage, reversing around a corner and turning in the road. Every type has a left/right side, three space difficulties and a varied forward approach.
-- Three tasks: park, fix an off-centre park, and drive out. Optional obstacles (pillars, low posts below the sensors, crooked neighbours, tow bars, bike racks, trolleys, bins, signposts) and a narrow aisle with cars opposite. **Surprise me** picks a random combination.
-- Graded parking report after securing the car: left/right and depth offsets in centimetres, angle, line/kerb/wall gaps, door clearance, contacts and habits, with a top-down replay of your path against the demonstration.
-- Guided / Hints only / Test coaching: live tips on the approach and manoeuvre, and a computed correction plan drawn as a cyan line when you stop off-centre (F in Hints mode).
-- Physically mounted mirrors and center-console camera/surround display; minimal digital speed, gear and parking-brake instruments behind the steering wheel.
-- Fixed/steering rear guides, stable emulated bird’s-eye surround view, lower-pitched front/rear parking beepers with a volume control.
-- Always-visible translucent desktop shortcuts and collapsible tutor instructions (H / T / controller D-pad up / Hint), landmark highlight, first-person demonstrations and a paused teaching map.
-- In-world cues: checkpoint rings with instructions, predicted wheel tracks and clearance tags; a briefing card for each new kind of scenario; unmistakable contact feedback.
-- Desktop onboarding: a **How to drive** page on first launch, a live key bar (pedals, wheel, gear, parking brake) and a next-step prompt. Both switch to controller labels after controller input.
-- Six stepped bumper sensor indicators and four independent lateral bars on the console and automatic third-person inspection after securing the car.
-- Bundled SDL 3.4.16 compatibility driver for the 2026 Steam Controller; the installed Godot remains unchanged.
-- Diagram-based scenario selection; separate Options and controller setup pages; fullscreen, borderless fullscreen and windowed modes; field-of-view, eye-height and dead-zone settings.
+- **Coaching levels**: *Guided* (everything on), *Hints only* (help once you stop) and *Test* (no aids, graded at the end).
+- **Briefing card** for each new kind of scenario: the goal, which way to drive first, and how to finish.
+- **In-world cues**: checkpoint rings with instructions where to stop or change gear, predicted wheel tracks for your current steering, and a clearance tag at the nearest obstacle.
+- **Live coaching**: your stopping point and line compared with the demonstration; off-centre stops get a computed **correction plan**, listed step by step and drawn on the ground.
+- **Parking report** after securing the car: centimetres left/right and forward/back, angle, line, kerb and door gaps, contacts and habits. It includes a replay that follows your car against the demonstration.
+- **Clear contact feedback**: a banner naming what hit what, red screen edges, a sound and rumble. Rolling gently onto a kerb is fine.
+- **Realistic cockpit**: working mirrors, a reversing camera with guides, a 360° view, front/rear/side parking sensors with beepers, and first-person demonstrations.
 
-## Build and verify
+## Getting started
 
-Run PowerShell from this directory:
+**Windows**: run `./build.ps1 -Run` from PowerShell. Or build the runtime bundle once with `./build.ps1 -Test -Import -Package`, then double-click **Launch.cmd**. On first launch the menu opens on **How to drive**.
+
+**Browser (local)**: double-click **Launch-Web.cmd**, or run `./serve-web.ps1 -Open` after `./build-web.ps1`. Use an ordinary desktop browser; press a gamepad button to connect a controller. Details: [web-playing.md](docs/web-playing.md).
+
+**Phones and tablets**: on-screen pedals, steering pad and gear buttons appear automatically on touch devices (Esc → Options → On-screen controls). The steering pad works relative to where your thumb lands, with a resting dead zone.
+
+**Steam / Steam Controller**: add `builds/ParkingPractice/ParkingPractice.exe` as a non-Steam game with **Start In** set to its folder and an analog **Gamepad** layout. The 2026 Steam Controller also works without Steam Input through a bundled SDL 3.4.16 driver, which only takes pads Godot cannot read itself.
+
+Every scenario starts in **P with the parking brake on**: hold the brake, select a gear, release the parking brake, then ease off the brake to creep.
+
+## Controls
+
+| Action | Keyboard / mouse | Controller |
+| --- | --- | --- |
+| Gas / brake | W / S | RT / LT |
+| Steer · centre the wheel | A / D · hold Z | Left stick · hold left-stick click |
+| Look around · look forward | Mouse · Home | Right stick · right-stick click |
+| Select D / R / P (hold brake) | 4 / 2 / 1 (3 = N) | RB / LB / A |
+| Parking brake | Space | Y |
+| Rear ↔ 360° camera | Tab | X |
+| Glance at the camera screen · over the shoulder | V · C | B · View |
+| Parking instructions · correction plan | H · F | D-pad up · D-pad down |
+| Pause menu | Esc | Start |
+| Retry · new variation · demonstration | F5 · F6 · F2 | Pause menu |
+
+Prompts and the on-screen key bar follow the device you use, including PlayStation and Nintendo button names. Pedals and steering can be rebound in **Esc → Options → Controller setup & controls**. Full notes: [playing.md](docs/playing.md).
+
+## Build and test
+
+`build.ps1` uses the installed editor at `C:\Program Files\Godot 4.7.2 Mono` and its bundled NuGet packages; it does not download anything. `build-web.ps1 -Setup` downloads the checksum-pinned web toolchain once.
 
 ```powershell
-./build.ps1 -Test -Import -Package
-./build.ps1 -Run
+./build.ps1 -Test            # simulation and generator checks, then build
+./build.ps1 -Import -Package # runtime bundle in builds/ParkingPractice
+./build-web.ps1              # browser build in builds/web
 ```
 
-`build.ps1` uses the installed editor at `C:\Program Files\Godot 4.7.2 Mono` and its bundled NuGet packages. It does not download dependencies. SDK/reference packs needed here are already installed. `.cache/` contains local build caches; `.godot/` and `builds/` are generated and excluded from Git.
-
-Runtime input/UI checks:
+In-game runtime checks (input, UI, demonstrations, teaching tools):
 
 ```powershell
 & 'C:\Program Files\Godot 4.7.2 Mono\Godot_v4.7.2-stable_mono_win64_console.exe' --headless --path . --fixed-fps 120 -- --smoke
 ```
 
-See [validation and remaining limits](docs/prototype-validation.md), [requirements](docs/requirements.md), and [asset provenance](assets/THIRD_PARTY.md). The 2026 Steam Controller is detected by the compatibility driver and both physical analog triggers were checked with the user; a complete through-Steam play session remains to be checked. The generic vehicle, camera optics, and reference points are not calibrated to the lesson car.
+Append `?check=1` to the browser URL to run the browser checks. `.cache/`, `.godot/` and `builds/` are generated and not tracked.
 
-This is a standalone Git repository at `C:\Users\Nickp\Development\parking-trainer`. Run Git commands from this directory. Source is published to [niposch/parking-trainer](https://github.com/niposch/parking-trainer); Pages deployment is documented in [deployment.md](docs/deployment.md).
+## Publishing
 
-For the browser prototype, double-click **Launch-Web.cmd**, or run `./serve-web.ps1 -Open`. The generated build is in `builds/web/`. Use an ordinary desktop browser for mouse capture and press a gamepad button to connect. See [browser controls, building and hosting](docs/web-playing.md) and the original [feasibility investigation](docs/web-feasibility.md). Physical standard-gamepad testing remains pending.
+Pushing to `main` builds and deploys the browser version through GitHub Pages ([deployment.md](docs/deployment.md)). Source: [niposch/parking-trainer](https://github.com/niposch/parking-trainer).
 
-Touch controls: **Esc → Options → On-screen controls → Auto / On / Off**. Auto activates on touch devices or the first real touch; On works on desktop too. Drag empty space to look, hold the steering pad, and use the separate gas/brake pads. Tap higher on a pedal for more pressure. Hold the brake to select a gear, then release P BRAKE to move. The hint starts as a single `?` icon and remembers your preference. The game renders at the full window size in both native and web builds; menus reflow on narrow windows.
+## Documentation and limits
+
+- [Controls and playing notes](docs/playing.md)
+- [Requirements](docs/requirements.md) and [validation results](docs/prototype-validation.md)
+- [Parking sensors](docs/parking-sensors.md), [controller investigation](docs/controller-investigation.md), [browser feasibility](docs/web-feasibility.md)
+- [Asset provenance](assets/THIRD_PARTY.md)
+
+The car, mirrors, camera optics and reference points are generic, not calibrated to a particular lesson car. The physics is a low-speed kinematic model on flat ground. The browser runtime is experimental. Real-world transfer of the teaching aids has not been measured.
