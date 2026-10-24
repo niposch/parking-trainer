@@ -6,11 +6,10 @@ public partial class ParkingGame
     internal SubViewport rearViewport=null!,surroundViewport=null!,mapViewport=null!;
     internal SubViewport[] mirrorViewports=new SubViewport[3];
     Camera3D rearCamera=null!,mapCamera=null!;
-    Camera3D[] mirrorCameras=new Camera3D[3],surroundCameras=new Camera3D[4];
-    SubViewport[] surroundSources=new SubViewport[4];
+    Camera3D[] mirrorCameras=new Camera3D[3];
+    Camera3D surroundCamera=null!;
     MeshInstance3D guideMesh=null!;
     Label3D landmark=null!;
-    internal ShaderMaterial surroundMaterial=null!;
     internal static ShaderMaterial FlipImage()=>new() { Shader=new Shader {Code="shader_type canvas_item; void fragment(){ COLOR=texture(TEXTURE,vec2(1.0-UV.x,UV.y)); }"} };
     SubViewport View(int width,int height,out Camera3D camera,uint layers=35)
     {
@@ -26,42 +25,13 @@ public partial class ParkingGame
         inspectionCamera=new Camera3D {Near=.08f,Far=75,Fov=60,CullMask=43};vehicle.AddChild(inspectionCamera);
         rearViewport=View(720,420,out rearCamera,39);rearCamera.KeepAspect=Camera3D.KeepAspectEnum.Width;rearCamera.Fov=112;
         for(int i=0;i<3;i++) {mirrorViewports[i]=View(i==1?500:352,i==1?170:216,out mirrorCameras[i]);}
-        for(int i=0;i<4;i++) {surroundSources[i]=View(380,380,out surroundCameras[i],1);surroundCameras[i].Fov=i<2?135:140;}
+        // Emulate a calibrated surround display with a metric orthographic view.
+        // Projecting tall cars onto the road plane caused blind seams/stretching.
+        surroundViewport=View(600,600,out surroundCamera,43);
+        surroundCamera.Projection=Camera3D.ProjectionType.Orthogonal;surroundCamera.Size=8;
+        surroundCamera.KeepAspect=Camera3D.KeepAspectEnum.Height;
         mapViewport=View(700,580,out mapCamera,35);mapCamera.Projection=Camera3D.ProjectionType.Orthogonal;mapCamera.Size=25;
         mapCamera.Position=new(1,28,0);mapCamera.RotationDegrees=new(-90,0,0);
-        // Ground-plane reconstruction from four finite, vehicle-mounted cameras.
-        // Raised objects stretch and coverage gaps remain dark, as in a camera composite.
-        surroundMaterial=new ShaderMaterial {Shader=new Shader {Code=@"
-shader_type canvas_item;
-uniform sampler2D image0:filter_linear; uniform sampler2D image1:filter_linear;
-uniform sampler2D image2:filter_linear; uniform sampler2D image3:filter_linear;
-uniform mat4 view0; uniform mat4 view1; uniform mat4 view2; uniform mat4 view3;
-uniform mat4 proj0; uniform mat4 proj1; uniform mat4 proj2; uniform mat4 proj3;
-vec4 camera_sample(sampler2D img,mat4 proj,mat4 view,vec3 p){
-    vec4 clip=proj*view*vec4(p,1.0);
-    vec2 uv=vec2(clip.x,-clip.y)/max(clip.w,0.001)*0.5+0.5;
-    if(clip.w<0.0 || uv.x<0.01 || uv.x>0.99 || uv.y<0.01 || uv.y>0.99) return vec4(0.0);
-    return vec4(texture(img,uv).rgb,1.0);
-}
-void fragment(){
-    vec3 p=vec3((UV.x-0.5)*8.0,0.015,mix(-5.325,2.675,UV.y));
-    vec4 a=camera_sample(image0,proj0,view0,p),b=camera_sample(image1,proj1,view1,p);
-    vec4 c=camera_sample(image2,proj2,view2,p),d=camera_sample(image3,proj3,view3,p);
-    float front=max(0.0,-p.z-1.325),back=max(0.0,p.z+1.325);
-    vec4 w=vec4(front,back,max(0.0,-p.x),max(0.0,p.x));
-    w=pow(w,vec4(8.0))*vec4(a.a,b.a,c.a,d.a);
-    float total=dot(w,vec4(1.0));
-    vec3 color=total>0.00001?(a.rgb*w.x+b.rgb*w.y+c.rgb*w.z+d.rgb*w.w)/total:vec3(0.12,0.16,0.18);
-    if(abs(p.x)<0.90 && p.z>-3.55 && p.z<0.90){
-        color=vec3(0.83,0.88,0.86);
-        if(abs(p.x)<0.68 && p.z>-2.5 && p.z<0.05) color=vec3(0.22,0.29,0.31);
-        if(abs(p.x)<0.65 && p.z>-2.05 && p.z<-0.40) color=vec3(0.74,0.81,0.79);
-        if(abs(p.x)>0.55 && p.z<-3.25) color=vec3(0.95,0.90,0.62);
-        if(abs(p.x)>0.55 && p.z>0.70) color=vec3(0.8,0.19,0.13);
-    }
-    COLOR=vec4(color,1.0);
-}"}};
-        for(int i=0;i<4;i++) surroundMaterial.SetShaderParameter($"image{i}",surroundSources[i].GetTexture());
         guideMesh=new MeshInstance3D {Layers=4,CastShadow=GeometryInstance3D.ShadowCastingSetting.Off};vehicle.AddChild(guideMesh);
         landmark=new Label3D {Text="◉",FontSize=80,PixelSize=.0035f,Modulate=new("d4ff9e"),Billboard=BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest=false,OutlineSize=10,OutlineModulate=new("23332a"),Layers=1};AddChild(landmark);
@@ -110,17 +80,9 @@ void fragment(){
             cam.KeepAspect=Camera3D.KeepAspectEnum.Height;
             cam.SetFrustum(height*near/distance*(i==1?1:1.7f),new Vector2(local.X,local.Y)*near/distance,near,65);
         }
-        // Bumper and underside-of-mirror mounts, calibrated for the nearby apron.
-        Vector3[] pos={new(0,.85f,-3.58f),new(.04f,1.10f,.925f),new(-(float)CarSpec.MirrorX,.99f,(float)CarSpec.MirrorZ+.08f),new((float)CarSpec.MirrorX,.99f,(float)CarSpec.MirrorZ+.08f)};
-        float[] yaw={0,Mathf.Pi,Mathf.Pi/2,-Mathf.Pi/2};
-        for(int i=0;i<4;i++)
-        {
-            var local=new Transform3D(Basis.FromEuler(new(-.96f,yaw[i],0)),pos[i]);
-            surroundCameras[i].GlobalTransform=vehicle.GlobalTransform*local;
-            surroundMaterial.SetShaderParameter($"view{i}",local.AffineInverse());
-            surroundMaterial.SetShaderParameter($"proj{i}",surroundCameras[i].GetCameraProjection());
-            surroundSources[i].RenderTargetUpdateMode=CameraMode==1&&!Paused?SubViewport.UpdateMode.Always:SubViewport.UpdateMode.Disabled;
-        }
+        surroundCamera.GlobalTransform=vehicle.GlobalTransform*new Transform3D(Basis.FromEuler(new(-Mathf.Pi/2,0,0)),new(0,10,(float)CarSpec.CentreZ));
+        surroundCamera.CullMask=Car.Gear==Gear.R?47u:43u;
+        surroundViewport.RenderTargetUpdateMode=CameraMode==1&&!Paused?SubViewport.UpdateMode.Always:SubViewport.UpdateMode.Disabled;
         mapViewport.RenderTargetUpdateMode=mapRect.IsVisibleInTree()?SubViewport.UpdateMode.Always:SubViewport.UpdateMode.Disabled;
         UpdateGuides();
         var reference=Scene.Obstacles.First(o=>!o.Curb);

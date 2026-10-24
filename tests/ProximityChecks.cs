@@ -4,7 +4,11 @@ internal static class ProximityChecks
 {
     public static void Run(Action<bool,string> check)
     {
-        double Reading(Pose pose,Obstacle obstacle)=>Enumerable.Range(0,6).Min(i=>ParkingProximity.Measure(pose,new[]{obstacle},i<3,i%3-1));
+        // Console order: front L/C/R, rear L/C/R, side front-left, front-right, rear-left, rear-right.
+        double[] Zones(Pose pose,Obstacle obstacle)=>Enumerable.Range(0,10).Select(i=>i<6
+            ?ParkingProximity.Measure(pose,new[]{obstacle},i<3,i%3-1)
+            :ParkingProximity.MeasureSide(pose,new[]{obstacle},i<8,i%2==0?-1:1)).ToArray();
+        double Reading(Pose pose,Obstacle obstacle)=>Zones(pose,obstacle).Min();
         Obstacle Local(Pose pose,double x,double z,double width=.02,double length=.02,double yaw=0)
         {var p=pose.Point(x,z);return new(new(p.X,p.Z,width,length,pose.Yaw+yaw),"test");}
         foreach(double yaw in new[]{0,.37,1.2,Math.PI})
@@ -17,7 +21,8 @@ internal static class ProximityChecks
                     double z=-CarSpec.Front+CarSpec.Length*step/90;
                     var post=Local(pose,side*1.01,z);
                     check(Reading(pose,post)<.101,"Thin side post remains detected along the entire body");
-                    check(Math.Min(ParkingProximity.Measure(pose,new[]{post},true,side),ParkingProximity.Measure(pose,new[]{post},false,side))<.101,"Side protection reports the correct side");
+                    var zones=Zones(pose,post);int[] own=side<0?new[]{0,3,6,8}:new[]{2,5,7,9},other=side<0?new[]{2,5,7,9}:new[]{0,3,6,8};
+                    check(own.Min(i=>zones[i])<.101 && other.All(i=>zones[i]==2),"Side protection reports the correct side only");
                 }
                 foreach(bool front in new[]{false,true})
                 {
@@ -25,9 +30,18 @@ internal static class ProximityChecks
                     check(Math.Abs(ParkingProximity.Measure(pose,new[]{post},front,side)-Math.Sqrt(.02))<1e-8,"Diagonal corner clearance is continuous outside the old ray fans");
                 }
                 var mirrorPost=Local(pose,side*(CarSpec.MirrorX+CarSpec.MirrorWidth/2+.03),CarSpec.MirrorZ);
-                check(Math.Abs(ParkingProximity.Measure(pose,new[]{mirrorPost},true,side)-.02)<1e-8,"Mirror-only obstruction warns before body clearance is exhausted");
+                check(Math.Abs(ParkingProximity.MeasureSide(pose,new[]{mirrorPost},true,side)-.02)<1e-8,"Mirror-only obstruction warns before body clearance is exhausted");
                 var touching=Local(pose,side*(CarSpec.MirrorX+CarSpec.MirrorWidth/2+.005),CarSpec.MirrorZ);
                 check(DrivingModel.Collides(pose,new[]{touching}) && Reading(pose,touching)<1e-8,"Mirror collision and proximity share the same envelope");
+            }
+            // A post in one zone must not appear in any other, so neighbouring
+            // indicators (rear corner and rear side in particular) stay distinct.
+            var places=new (double X,double Z)[]{(-1.2,-CarSpec.Front-.3),(0,-CarSpec.Front-.3),(1.2,-CarSpec.Front-.3),
+                (-1.2,CarSpec.Rear+.3),(0,CarSpec.Rear+.3),(1.2,CarSpec.Rear+.3),(-1.2,-2.3),(1.2,-2.3),(-1.2,-.4),(1.2,-.4)};
+            for(int zone=0;zone<10;zone++)
+            {
+                var zones=Zones(pose,Local(pose,places[zone].X,places[zone].Z));
+                check(zones[zone]<.5 && Enumerable.Range(0,10).All(i=>i==zone||zones[i]==2),$"Zone {zone} alone detects an obstacle placed in it");
             }
             for(int step=1;step<=180;step++)
             {

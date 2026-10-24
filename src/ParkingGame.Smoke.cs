@@ -60,11 +60,11 @@ public partial class ParkingGame
             sensorGraphic.SetRanges(new[]{2.0,.25,.8},new[]{.5,1.2,2.0});
             Check(Enumerable.Range(0,6).Select(sensorGraphic.Level).SequenceEqual(new[]{0,4,2,3,1,0}),"Each front/rear sensor has independent stepped visual proximity");
             Check(ParkingSensors.ProximityLevel(.3)==3 && ParkingSensors.ProximityLevel(.6)==2 && ParkingSensors.ProximityLevel(1)==1 && ParkingSensors.ProximityLevel(1.6)==0,"Sensor display thresholds match the documented steps");
-            Paused=false;Car.Gear=Gear.R;FrontRange=2;RearRange=.70;beepTime=0;Sound(.01);
-            Check(beep.VolumeDb==0 && beepTime>.3 && beepTime<.4 && beep.Stream==sensorPulses[1],"Lower-pitched parking pulses retain the original loudness and cadence");
-            RearRange=.20;Sound(.01);var loop=beep.Stream;Sound(.01);
-            Check(beep.Stream==loop && ((AudioStreamWav)loop).LoopMode==AudioStreamWav.LoopModeEnum.Forward,"Close-distance warning reuses a smooth continuous tone instead of restarting");
-            BeeperVolume=0;Sound(.01);Check(!beep.Playing,"Zero beeper volume silences the warning");
+            Paused=false;Car.Gear=Gear.R;FrontRange=2;RearRange=.70;Sound(.01);
+            Check(beep.VolumeDb==0 && alarm.PulseInterval>.3 && alarm.PulseInterval<.4 && !alarm.Front,"Lower-pitched parking pulses retain the original loudness and cadence");
+            RearRange=.20;Sound(.01);var stream=beep.Stream;Sound(.01);
+            Check(beep.Stream==stream && alarm.Continuous && beep.Playing,"Close-distance warning retains one phase-continuous stream");
+            BeeperVolume=0;Sound(.01);Check(!alarm.Enabled,"Zero beeper volume fades the warning to silence");
             BeeperVolume=1;Paused=true;Car.Gear=Gear.P;FrontRange=RearRange=2;
             Check(MenuPage=="home" && menuPages["home"].Visible && !menuPages["options"].Visible,"Pause opens a focused home page with options in a submenu");
             // Initial physics catch-up can precede the first container layout.

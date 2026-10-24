@@ -3,15 +3,17 @@ namespace ParkingTrainer;
 
 internal partial class ParkingSensors : Control
 {
-    readonly int[] levels=new int[6];
+    // 0-2 front left/centre/right, 3-5 rear left/centre/right,
+    // 6-9 sides: front-left, front-right, rear-left, rear-right.
+    readonly int[] levels=new int[10];
     internal int Level(int sector)=>levels[sector];
     public static int ProximityLevel(double distance)=>distance<.30?4:distance<.60?3:distance<1.0?2:distance<1.6?1:0;
-    public void SetRanges(double[] front,double[] rear)
+    public void SetRanges(double[] front,double[] rear,double[]? sides=null)
     {
         bool changed=false;
-        for(int i=0;i<6;i++)
+        for(int i=0;i<10;i++)
         {
-            double distance=i<3?front[i]:rear[i-3];
+            double distance=i<3?front[i]:i<6?rear[i-3]:sides?[i-6]??2;
             int level=ProximityLevel(distance);
             if(level<levels[i] && ProximityLevel(distance-.04)>=levels[i]) level=levels[i];
             changed|=levels[i]!=level;levels[i]=level;
@@ -51,8 +53,10 @@ internal partial class ParkingSensors : Control
                 DrawColoredPolygon(polygon,levels[i]>=4-ring?colors[levels[i]]:colors[0]);
                 if(sector!=0)
                 {
-                    var sideRect=new Rect2(P(sector*(58+ring*13)-5,front?-65:4),new Vector2(10,61)*scale);
-                    DrawRect(sideRect,levels[i]>=4-ring?colors[levels[i]]:colors[0]);
+                    // Lateral bars sit between the corner zones, which wrap 0.5 m along the body.
+                    int side=levels[6+(front?0:2)+(sector>0?1:0)];
+                    var sideRect=new Rect2(P(sector*(58+ring*13)-5,front?-59:3),new Vector2(10,56)*scale);
+                    DrawRect(sideRect,side>=4-ring?colors[side]:colors[0]);
                 }
             }
         }

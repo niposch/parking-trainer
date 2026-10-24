@@ -41,10 +41,11 @@ public partial class ParkingGame
         Scene.Obstacles.Add(new(new(0,CarSpec.Rear+.10,8,.10,0),"curb",.15,true));
         Muted=false;BeeperVolume=1;
         await PhysicsFrames(4);
-        Check(Math.Abs(FrontSectors[0]-.02)<1e-8 && Math.Abs(RearSectors[0]-Math.Sqrt(.02))<1e-8,"Mirror and diagonal rear-corner clearances reach the running game");
-        Check(FrontSectors[2]==2 && RearSectors[2]==2,"Opposite-side indicators stay clear and ignore the low curb");
-        Check(sensorGraphic.Level(0)==4 && sensorGraphic.Level(3)==4 && sensorGraphic.Level(2)==0 && sensorGraphic.Level(5)==0,"Side and corner dangers activate the corresponding console zones");
-        Check(beep.Stream==sensorContinuous[0] && beep.Playing,"Side danger activates the continuous distance warning before contact");
+        Check(Math.Abs(SideSectors[0]-.02)<1e-8 && Math.Abs(RearSectors[0]-Math.Sqrt(.02))<1e-8,"Mirror and diagonal rear-corner clearances reach the running game");
+        Check(FrontSectors[2]==2 && RearSectors[2]==2 && SideSectors[1]==2 && SideSectors[3]==2,"Opposite-side indicators stay clear and ignore the low curb");
+        Check(FrontSectors[0]==2 && SideSectors[2]==2,"A mirror-side obstacle does not light the front corner, and a rear-corner obstacle does not light the rear side");
+        Check(sensorGraphic.Level(6)==4 && sensorGraphic.Level(3)==4 && sensorGraphic.Level(0)==0 && sensorGraphic.Level(8)==0 && sensorGraphic.Level(2)==0 && sensorGraphic.Level(5)==0,"Side and corner dangers activate only their own console zones");
+        Check(alarm.Continuous && alarm.Front && beep.Playing,"Side danger activates the continuous distance warning before contact");
         NewScenario(false);
         return passed;
     }

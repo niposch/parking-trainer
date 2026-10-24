@@ -225,3 +225,14 @@ Demonstration playback must advance continuously through path segments on render
 - In landscape touch mode, place P/R/N/D and parking brake above the left steering pad so the right hand can keep holding the service brake.
 - Prevent red-zone alarm chatter and mobile playback glitches while preserving the existing pitch and loudness.
 - Improve surround-view camera placement, lens coverage, stitching and useful near-car framing. Remove duplicated player-body artifacts without changing the independent reversing camera.
+
+
+## Follow-up: stable surround display, warning transitions and desktop help — 18 October 2026
+
+These owner requests supersede the earlier camera-composite implementation preference in CAM-4 and the earlier requirement to preserve continuous-tone pitch:
+
+- Emulation is acceptable for the 360° parking view. Prioritize a stable, car-centred view with consistent clearance scale and no stretched obstacles or blind seams. Keep the reverse camera and sensors. Record that the virtual bird’s-eye approximation does not reproduce OEM blind spots or calibration.
+- Remove audio pops when distance/cadence/pitch states change, using continuous waveform phase and sample-level fades. Make the continuous warning less piercing; preserve the established loudness and the ability to mute/adjust volume.
+- Remove the centre mirror support rod and lower/move the housing inboard enough to keep it inside the windscreen opening.
+- Returning from landscape to portrait must restore the same readable menu and control scale, including repeated rotations and browser viewport/DPI changes.
+- Desktop keyboard shortcuts remain visible, including in menus, with a faint, mostly transparent background. **H expands/collapses the parking instructions behind `?`**, not the shortcut list. Keep T/X as existing alternatives; show the sensible driving, camera, hint and pause/retry keys.

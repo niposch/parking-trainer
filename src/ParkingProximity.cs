@@ -1,18 +1,35 @@
 namespace ParkingTrainer;
 
 // Idealized bumper and lateral protection, using the body and mirror collision
-// envelope. Overlapping regions prevent gaps at corners and sector handoffs.
+// envelope. Each part of an obstacle belongs to exactly one zone by where it
+// lies around the car, and is measured to the complete envelope. The zones tile
+// the plane, so the nearest zone is the true clearance without gaps, while a
+// bumper corner does not repeat an obstacle that is beside the doors.
 // This calculates clearance; it does not simulate ultrasound propagation.
 public static class ParkingProximity
 {
+    // Corner zones wrap this far along the body; the centre zone spans this half-width.
+    public const double CornerDepth=.50,CentreHalfWidth=.40;
+    const double Inf=double.PositiveInfinity;
+    // Bumper zones: sector -1 left corner, 0 centre, 1 right corner.
     public static double Measure(Pose pose,IReadOnlyList<Obstacle> obstacles,bool front,int sector,double range=2)
     {
         if(sector is < -1 or > 1) throw new ArgumentOutOfRangeException(nameof(sector));
+        double minX=sector<0?-Inf:sector>0?CentreHalfWidth:-CentreHalfWidth;
+        double maxX=sector<0?-CentreHalfWidth:sector>0?Inf:CentreHalfWidth;
+        return front?Clearance(pose,obstacles,minX,maxX,-Inf,-CarSpec.Front+CornerDepth,range)
+                    :Clearance(pose,obstacles,minX,maxX,CarSpec.Rear-CornerDepth,Inf,range);
+    }
+    // Lateral zones between the corners, split into front and rear halves at the body centre.
+    public static double MeasureSide(Pose pose,IReadOnlyList<Obstacle> obstacles,bool front,int side,double range=2)
+    {
+        if(side is not (-1 or 1)) throw new ArgumentOutOfRangeException(nameof(side));
+        return Clearance(pose,obstacles,side<0?-Inf:0,side<0?0:Inf,
+            front?-CarSpec.Front+CornerDepth:CarSpec.CentreZ,front?CarSpec.CentreZ:CarSpec.Rear-CornerDepth,range);
+    }
+    static double Clearance(Pose pose,IReadOnlyList<Obstacle> obstacles,double minX,double maxX,double minZ,double maxZ,double range)
+    {
         if(range<=0) return 0;
-        double minX=sector<0?-CarSpec.Width/2:sector>0?.22:-.40;
-        double maxX=sector>0?CarSpec.Width/2:sector<0?-.22:.40;
-        double minZ=front?-CarSpec.Front:CarSpec.CentreZ-.15;
-        double maxZ=front?CarSpec.CentreZ+.15:CarSpec.Rear;
         double nearest=range*range,c=Math.Cos(pose.Yaw),s=Math.Sin(pose.Yaw);
         Span<(double X,double Z)> polygon=stackalloc (double,double)[12];
         Span<(double X,double Z)> scratch=stackalloc (double,double)[12];
@@ -30,20 +47,26 @@ public static class ParkingProximity
                 polygon[i]=(cx+bc*x+bs*z,cz-bs*x+bc*z);
             }
             int count=4;
-            if(sector<=0) {count=Clip(polygon[..count],scratch,0,maxX,true);scratch[..count].CopyTo(polygon);}
-            if(sector>=0) {count=Clip(polygon[..count],scratch,0,minX,false);scratch[..count].CopyTo(polygon);}
-            if(front && sector!=0 && count>0)
-            {
-                // A mirror can remain the closest part of the car when the
-                // obstacle is just aft of the front/rear body-region boundary.
-                double mirror=sector*CarSpec.MirrorX;
-                nearest=Math.Min(nearest,DistanceSquared(polygon[..count],mirror-CarSpec.MirrorWidth/2,mirror+CarSpec.MirrorWidth/2,CarSpec.MirrorZ-CarSpec.MirrorLength/2,CarSpec.MirrorZ+CarSpec.MirrorLength/2));
-            }
-            count=Clip(polygon[..count],scratch,1,front?maxZ:minZ,front);scratch[..count].CopyTo(polygon);
-            if(count>0) nearest=Math.Min(nearest,DistanceSquared(polygon[..count],minX,maxX,minZ,maxZ));
+            count=Keep(polygon,scratch,count,0,minX,false);count=Keep(polygon,scratch,count,0,maxX,true);
+            count=Keep(polygon,scratch,count,1,minZ,false);count=Keep(polygon,scratch,count,1,maxZ,true);
+            if(count==0) continue;
+            var part=polygon[..count];
+            nearest=Math.Min(nearest,DistanceSquared(part,-CarSpec.Width/2,CarSpec.Width/2,-CarSpec.Front,CarSpec.Rear));
+            nearest=Math.Min(nearest,Math.Min(Mirror(part,-1),Mirror(part,1)));
             if(nearest<=1e-16) return 0;
         }
         return Math.Sqrt(nearest);
+    }
+    static double Mirror(ReadOnlySpan<(double X,double Z)> polygon,int side)
+    {
+        double x=side*CarSpec.MirrorX;
+        return DistanceSquared(polygon,x-CarSpec.MirrorWidth/2,x+CarSpec.MirrorWidth/2,CarSpec.MirrorZ-CarSpec.MirrorLength/2,CarSpec.MirrorZ+CarSpec.MirrorLength/2);
+    }
+    static int Keep(Span<(double X,double Z)> polygon,Span<(double X,double Z)> scratch,int count,int axis,double boundary,bool less)
+    {
+        if(double.IsInfinity(boundary) || count==0) return count;
+        count=Clip(polygon[..count],scratch,axis,boundary,less);scratch[..count].CopyTo(polygon);
+        return count;
     }
     static int Clip(ReadOnlySpan<(double X,double Z)> input,Span<(double X,double Z)> output,int axis,double boundary,bool less)
     {

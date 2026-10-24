@@ -1,5 +1,6 @@
 using ParkingTrainer;
 int checks=0;
+if(args.Contains("--audio")) {AlarmChecks.Run((ok,name)=>{if(!ok) throw new Exception(name);checks++;});Console.WriteLine($"PASS: {checks} audio transition checks.");return;}
 void Check(bool value,string name) { if(!value) throw new Exception(name); checks++; }
 if(args.Contains("--proximity")) {ProximityChecks.Run(Check);Console.WriteLine($"PASS: {checks:N0} proximity checks.");return;}
 foreach(var gear in new[]{Gear.D,Gear.R})

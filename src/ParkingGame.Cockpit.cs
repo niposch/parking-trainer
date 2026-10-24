@@ -6,7 +6,7 @@ public partial class ParkingGame
     Node3D[] mirrorScreens=new Node3D[3];
     MeshInstance3D?[] mirrorArms=new MeshInstance3D?[3];
     ParkingSensors sensorGraphic=null!;
-    readonly Vector3[] mirrorCentres={new(-(float)CarSpec.MirrorX,1.055f,(float)CarSpec.MirrorZ),new(0,1.30f,-1.90f),new((float)CarSpec.MirrorX,1.055f,(float)CarSpec.MirrorZ)};
+    readonly Vector3[] mirrorCentres={new(-(float)CarSpec.MirrorX,1.055f,(float)CarSpec.MirrorZ),new(0,1.25f,-1.82f),new((float)CarSpec.MirrorX,1.055f,(float)CarSpec.MirrorZ)};
     readonly Vector2[] mirrorSizes={new(.22f,.135f),new(.25f,.085f),new(.22f,.135f)};
     SubViewport FlatDisplay(int width,int height,out Control canvas)
     {
@@ -40,7 +40,7 @@ public partial class ParkingGame
         var display=FlatDisplay(720,480,out var console);
         cameraLabel=Text(console,"REAR",24,new("d0f39f"));cameraLabel.Position=new(22,10);
         rearRect=Image(console,rearViewport,true);rearRect.Position=new(0,45);rearRect.Size=new(450,370);rearRect.StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered;
-        surroundRect=new TextureRect {Texture=surroundSources[0].GetTexture(),Material=surroundMaterial,
+        surroundRect=new TextureRect {Texture=surroundViewport.GetTexture(),
             ExpandMode=TextureRect.ExpandModeEnum.IgnoreSize,StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered,
             Position=new(0,45),Size=new(450,370),Visible=false,MouseFilter=Control.MouseFilterEnum.Ignore};console.AddChild(surroundRect);
         sensorGraphic=new ParkingSensors {Position=new(450,45),Size=new(260,370)};console.AddChild(sensorGraphic);
@@ -50,7 +50,6 @@ public partial class ParkingGame
         // Physical mirror glass is visible only to the driver's camera. Reflection
         // cameras omit the glass layer to prevent recursive render feedback.
         for(int i=0;i<3;i++) mirrorScreens[i]=Screen(mirrorCentres[i],mirrorSizes[i],mirrorViewports[i].GetTexture(),true);
-        WorldFactory.Box(vehicle,new(0,1.40f,-1.90f),new(.018f,.14f,.028f),new("202a2d")).Layers=8;
         foreach(int i in new[]{0,2})
         {
             var arm=WorldFactory.Box(vehicle,Vector3.Zero,new(.018f,.018f,.15f),new("202a2d"));

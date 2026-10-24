@@ -20,9 +20,9 @@ Scenarios start in P with the parking brake on. Hold L2/S, select D for the appr
 - Automatic creep, independent gas/brake, P/R/N/D, parking brake, finite steering rate, collision stopping.
 - Procedural reverse parallel, reverse 90° bay and forward 90° bay exercises; repeatable variations, three space difficulties, and a varied forward approach before every maneuver.
 - Physically mounted mirrors and center-console camera/surround display; minimal digital speed, gear and parking-brake instruments behind the steering wheel.
-- Fixed/steering rear guides, four-camera surround composite, lower-pitched front/rear parking beepers with a volume control.
-- Collapsible tutor hint (T / controller X / Hint), landmark highlight, first-person demonstrations and a paused teaching map.
-- Six stepped sensor indicators on the console and automatic third-person inspection after securing the car.
+- Fixed/steering rear guides, stable emulated bird’s-eye surround view, lower-pitched front/rear parking beepers with a volume control.
+- Always-visible translucent desktop shortcuts and collapsible tutor instructions (H / T / controller X / Hint), landmark highlight, first-person demonstrations and a paused teaching map.
+- Six stepped bumper sensor indicators and four independent lateral bars on the console and automatic third-person inspection after securing the car.
 - Bundled SDL 3.4.16 compatibility driver for the 2026 Steam Controller; the installed Godot remains unchanged.
 - Diagram-based scenario selection; separate Options and controller setup pages; fullscreen, borderless fullscreen and windowed modes; field-of-view, eye-height and dead-zone settings.
 

@@ -32,9 +32,8 @@ public partial class ParkingGame
             Check(IsWeb,"Actual WebAssembly runtime");
             Check(Paused && Car.Gear==Gear.P && Car.ParkingBrake,"Starts secured and paused");
             Check(!modernController.Connected,"Windows SDL driver excluded");
-            Check(mirrorViewports.Length==3 && surroundSources.Length==4,"Three mirrors and four surround cameras");
-            Check(sensorContinuous.All(t=>t.LoopMode==AudioStreamWav.LoopModeEnum.Forward && t.LoopEnd==4410),"Baked continuous beepers loop over a complete waveform");
-            Check(sensorPulses.All(t=>t.Format==AudioStreamWav.FormatEnum.Format16Bits && t.Data.Length>0),"Baked PCM pulse samples loaded");
+            Check(mirrorViewports.Length==3 && surroundCamera.Projection==Camera3D.ProjectionType.Orthogonal,"Three mirrors and a metric surround view");
+            Check(beep.Stream is AudioStreamGenerator && beep.Playing,"One procedural warning stream runs in the browser");
             Check(displaySelector.ItemCount==2,"Browser display choices");
             Pause(false);Tutor=false;
             var left=new InputEventJoypadMotion {Device=15,Axis=JoyAxis.TriggerLeft,AxisValue=.75f};

@@ -129,7 +129,7 @@ public partial class ParkingGame
         var pedals=Row(controls,10);
         controlsFirst=Button(pedals,"Bind L2 brake",()=>BeginPedalBinding(BrakeAction));
         Button(pedals,"Bind R2 gas",()=>BeginPedalBinding(GasAction));Button(pedals,"Reset pedals",ResetPedalBindings);
-        var help=Text(controls,"RT gas · LT brake · left stick turn · right stick look\nLB R · RB D · A gear · Y display · X hint · B console\nRight-stick click: parking brake · D-pad: menus only\n\nW/S pedals · A/D steer · mouse look\n1 P · 2 R · 3 N · 4 D · Space parking brake\nZ centre wheel · C shoulder · V console · Home forward\nTab display · T hint · Esc pause/back · F5 retry · F6 new",16);
+        var help=Text(controls,"RT gas · LT brake · left stick turn · right stick look\nLB R · RB D · A gear · Y display · X hint · B console\nRight-stick click: parking brake · D-pad: menus only\n\nW/S pedals · A/D steer · mouse look\n1 P · 2 R · 3 N · 4 D · Space parking brake\nZ centre wheel · C shoulder · V console · Home forward\nTab display · T hint · H instructions · Esc pause/back · F5 retry · F6 new",16);
         help.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         var map=Page("map");mapRect=Image(map,mapViewport);mapRect.CustomMinimumSize=new(0,430);mapRect.StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered;
         Text(root,"D-pad / arrows: navigate   ·   A / Enter: select   ·   B / Esc: back",13,new("52675f")).AutowrapMode=TextServer.AutowrapMode.WordSmart;
@@ -161,7 +161,7 @@ public partial class ParkingGame
     void ShowMenuPage(string page)
     {
         menuScroll.CancelTouch();
-        MenuPage=page;
+        MenuPage=page;QueueHudLayout();
         if(page=="map") FrameTeachingMap();
         foreach(var pair in menuPages) pair.Value.Visible=pair.Key==page;
         menuBack.Visible=page!="home";menuScroll.ScrollVertical=0;

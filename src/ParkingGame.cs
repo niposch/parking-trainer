@@ -16,8 +16,10 @@ public partial class ParkingGame : Node3D
     internal float EyeHeight=1.20f,Fov=76,SteeringSensitivity=1,Deadzone=.10f,LookYaw=0,LookPitch=0;
     internal double Gas,Brake=1,FrontRange=2,RearRange=2,Elapsed=0,ContactFlash=0;
     internal double[] FrontSectors=new double[3],RearSectors=new double[3];
+    // Lateral zones: front-left, front-right, rear-left, rear-right.
+    internal double[] SideSectors=new double[4];
     internal string Notice="";
-    double noticeTime,beepTime,successTime;
+    double noticeTime,successTime;
     AudioStreamPlayer beep=null!;
     int demoStep; double demoSegmentDistance,demoShiftWait;
     bool autoCapture,smokeMode,captureTaken; string capturePath="",captureView=""; int frames; ulong captureStarted;
@@ -62,7 +64,11 @@ public partial class ParkingGame : Node3D
         else if(OS.GetCmdlineUserArgs().Contains("--phone-check")) RunPhoneCheck();
         else if(OS.GetCmdlineUserArgs().Contains("--smoke")) RunSmoke();
     }
-    public override void _ExitTree() { Input.JoyConnectionChanged-=ControllerChanged;modernController?.Dispose(); }
+    public override void _ExitTree()
+    {
+        Input.JoyConnectionChanged-=ControllerChanged;modernController?.Dispose();
+        if(IsInstanceValid(beep)) {var stream=beep.Stream;beep.Stop();beep.Stream=null;alarmPlayback?.Dispose();stream?.Dispose();}
+    }
     void ControllerChanged(long device,bool connected)
     {
         if(!connected && device==selectedController) {selectedController=-1;Pause(true);Message("Controller disconnected. Reconnect and resume.");}
@@ -133,6 +139,7 @@ public partial class ParkingGame : Node3D
         bool pad(JoyButton code)=>ev is InputEventJoypadButton b&&b.Pressed&&b.Device==selectedController&&b.ButtonIndex==code;
         if(key(Key.Escape)||pad(JoyButton.Start)||Paused&&pad(JoyButton.B))
         {if(Paused) BackOrResume();else Pause(true);GetViewport().SetInputAsHandled();return;}
+        if(key(Key.H)) {ToggleHint();GetViewport().SetInputAsHandled();return;}
         if(key(Key.F5)) {NewScenario(false);return;}
         if(key(Key.F6)) {NewScenario(true);return;}
         if(key(Key.F1)||pad(JoyButton.Back)) {Pause(true);return;}
@@ -204,7 +211,9 @@ public partial class ParkingGame : Node3D
         }
         if(!Demo || Paused || autoCapture) {ApplyPose();UpdateViews(delta);}
         for(int i=0;i<3;i++) {FrontSectors[i]=Car.Sensor(Scene.Obstacles,true,i-1);RearSectors[i]=Car.Sensor(Scene.Obstacles,false,i-1);}
-        FrontRange=FrontSectors.Min();RearRange=RearSectors.Min();
+        for(int i=0;i<4;i++) SideSectors[i]=Car.SideSensor(Scene.Obstacles,i<2,i%2==0?-1:1);
+        FrontRange=Math.Min(FrontSectors.Min(),Math.Min(SideSectors[0],SideSectors[1]));
+        RearRange=Math.Min(RearSectors.Min(),Math.Min(SideSectors[2],SideSectors[3]));
         UpdateHud(); Sound(delta);
     }
     void ApplyPose()
@@ -230,6 +239,8 @@ public partial class ParkingGame : Node3D
     public override async void _Process(double delta)
     {
         frames++;
+        RefreshHudLayout();
+        FillAlarmBuffer();
         UpdateWebFocus();
         UpdateControllerCheck();
         if(Demo && !Paused && !autoCapture) {RunDemo(delta);ApplyPose();UpdateViews(delta);}

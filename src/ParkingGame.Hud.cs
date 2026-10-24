@@ -60,19 +60,21 @@ public partial class ParkingGame
         var layer=new CanvasLayer();AddChild(layer);
         hud=new Control {LayoutMode=0};hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);layer.AddChild(hud);
         // Fixed design space follows the actual viewport without changing camera FOV.
-        GetViewport().SizeChanged+=LayoutHud;
+        GetViewport().SizeChanged+=QueueHudLayout;
         tutorPanel=Panel(hud,new(22,22),new(370,210),cream);var tv=new VBoxContainer();tutorPanel.AddChild(tv);
         tutorHeading=Button(tv,"01 / SET UP",ToggleHint);tutorHeading.Alignment=HorizontalAlignment.Left;tutorHeading.AddThemeFontSizeOverride("font_size",14);tutorText=Text(tv,"",16);tutorText.AutowrapMode=TextServer.AutowrapMode.WordSmart;tutorText.CustomMinimumSize=new(330,130);
         metricsLabel=Text(tv,"",13,new("52675f"));
         metricsLabel.Hide();
-        hintIcon=Button(hud,"?",ToggleHint);hintIcon.TooltipText=Tr("Show parking hint (T / X)");
+        hintIcon=Button(hud,"?",ToggleHint);hintIcon.TooltipText=Tr("Show parking instructions (H / T / X)");
         hintIcon.CustomMinimumSize=new(44,44);hintIcon.Size=new(44,44);
         var iconStyle=Style(cream,null,22);iconStyle.ContentMarginLeft=iconStyle.ContentMarginRight=iconStyle.ContentMarginTop=iconStyle.ContentMarginBottom=0;
         hintIcon.AddThemeStyleboxOverride("normal",iconStyle);
         hintIcon.AddThemeFontSizeOverride("font_size",22);ApplyHintLayout();
         noticeLabel=Text(hud,"",18,cream);noticeLabel.Position=new(470,800);noticeLabel.Size=new(500,65);noticeLabel.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         noticeLabel.AddThemeColorOverride("font_shadow_color",ink);noticeLabel.AddThemeConstantOverride("shadow_offset_x",1);noticeLabel.AddThemeConstantOverride("shadow_offset_y",2);
+        SetupShortcutPanel();
         SetupMenu();
+        menu.MinimumSizeChanged+=QueueHudLayout;
         SetupCockpitDisplays();
         SetupTouchControls();
         resumeButton.GrabFocus();LayoutHud();
@@ -85,18 +87,34 @@ public partial class ParkingGame
         var slider=new HSlider {MouseFilter=Control.MouseFilterEnum.Pass,MinValue=min,MaxValue=max,Step=step,Value=value,CustomMinimumSize=new(230,20)};v.AddChild(slider);
         slider.ValueChanged+=x=>{readout.Text=x.ToString(step<1?"0.00":"0");changed(x);SaveSettings();};
     }
+    bool hudLayoutPending=true;
+    Vector2 lastHudSize;
+    float lastHudUnit;
+    void QueueHudLayout()=>hudLayoutPending=true;
+    void RefreshHudLayout()
+    {
+        // SizeChanged can precede the engine's new screen transform/DPI and the
+        // container minimum-size pass. Recheck the settled inputs each frame.
+        if(!IsInstanceValid(hud)) return;
+        var size=GetViewport().GetVisibleRect().Size;
+        float unit=InterfaceLayout.Unit(GetViewport());
+        if(hudLayoutPending || !size.IsEqualApprox(lastHudSize) || Math.Abs(unit-lastHudUnit)>.001f) LayoutHud();
+    }
     void LayoutHud()
     {
         if(!IsInstanceValid(hud)) return;
         var size=GetViewport().GetVisibleRect().Size;
         float unit=InterfaceLayout.Unit(GetViewport());
+        hudLayoutPending=false;lastHudSize=size;lastHudUnit=unit;
         var pixels=size/unit;
         hud.Scale=Vector2.One;
-        var menuSize=new Vector2(Mathf.Min(860,pixels.X-24),Mathf.Min(700,pixels.Y-24));
+        var area=MenuArea(pixels);
+        var menuSize=new Vector2(Mathf.Min(860,area.Size.X),Mathf.Min(700,area.Size.Y));
         bool narrow=menuSize.X<700;
         scenarioCards.Columns=narrow?1:3;
         foreach(var row in responsiveRows) row.Vertical=narrow;
-        menu.Scale=Vector2.One*unit;menu.Size=menuSize;menu.Position=(size-menu.Size*unit)/2;
+        FitMenu(size,unit);
+        UpdateShortcutPanel();
         menuTitle.AddThemeFontSizeOverride("font_size",narrow?22:28);
         float tutorWidth=TouchEnabled&&pixels.X>=620&&pixels.X>pixels.Y&&pixels.Y<520?pixels.X-320:pixels.X-24;
         float tutorScale=unit*Mathf.Min(1,tutorWidth/370);
@@ -131,14 +149,14 @@ public partial class ParkingGame
     void UpdateHud()
     {
         RefreshTouchControls();
+        UpdateShortcutPanel();
         if(Paused)
         {
             // Containers may lower their minimum size a frame after reflow.
             // Reapply the fit once that deferred layout has completed.
             var size=GetViewport().GetVisibleRect().Size;
             float unit=InterfaceLayout.Unit(GetViewport());
-            menu.Size=new(Mathf.Min(860,size.X/unit-24),Mathf.Min(700,size.Y/unit-24));
-            menu.Position=(size-menu.Size*unit)/2;
+            FitMenu(size,unit);
         }
         gearLabel.Text=Car.Gear.ToString();speedLabel.Text=string.Format(Tr("{0:0.0}"),Math.Abs(Car.Speed)*3.6);
         steerLabel.Text=Car.ParkingBrake?"(P)":"";
@@ -146,7 +164,7 @@ public partial class ParkingGame
         sensorLabel.Text=string.Format(Tr("FRONT {0}     REAR {1}"),distance(FrontRange),distance(RearRange));
         sensorLabel.Modulate=Math.Min(FrontRange,RearRange)<.3?new Color("ff997a"):Colors.White;
         rearRect.Visible=CameraMode==0;surroundRect.Visible=CameraMode==1;
-        sensorGraphic.SetRanges(FrontSectors,RearSectors);
+        sensorGraphic.SetRanges(FrontSectors,RearSectors,SideSectors);
         cameraLabel.Text=CameraMode==0?Tr("REAR + SENSORS"):Tr("SURROUND + SENSORS");
         noticeLabel.Text=Notice!=""?Tr(Notice):Demo?Tr("DEMONSTRATION · observe the mirrors"):successTime>.8?Tr("Position looks good. Select P and apply the parking brake."):"";
         if(Inspection) noticeLabel.Text=Tr("PARKING INSPECTION · mouse / right stick to orbit\nMouse wheel to zoom · B / Enter to return to cockpit");

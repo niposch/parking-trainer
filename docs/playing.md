@@ -20,7 +20,7 @@ The mouse is captured while driving and moves the driver's head. Escape pauses a
 | Shoulder view / forward view | Mouse / right stick | C / Home |
 | Look down at center console | Right face button (B mapping) | V |
 | Rear camera + sensors ↔ surround camera + sensors | Top face button (Y mapping) | Tab |
-| Expand/collapse hint | Left face button (X mapping) | T |
+| Expand/collapse parking instructions (`?`) | Left face button (X mapping) | H or T |
 | Pause / resume | Start | Escape |
 | Open menu | Back | F1 |
 | Retry / new variation | Pause menu | F5 / F6 |
@@ -65,7 +65,7 @@ The bay side is saved, retained by Retry/New variation and shown on pause home. 
 
 The selector shows these ranges; pause home shows the actual generated size. Difficulty changes physical space dimensions, independently of tutor/camera assistance. Layout generation validates a complete collision-free approach and parking witness without silently enlarging the selected space. Generator version 2 intentionally changes the layouts produced by earlier seeds.
 
-Parking audio now uses lower-pitched tones while retaining the original loudness and repeat timing, as requested. The close-range warning remains continuous and uses a smooth loop. **Esc → Options → Beeper volume (%)** adjusts the level; 0% is silent, and the separate mute button is still available. The level is saved between sessions.
+Parking audio now uses lower-pitched tones while retaining the original loudness and repeat timing, as requested. The close-range warning remains continuous, at a softer 325 Hz front / 250 Hz rear pitch. Pulses stay at 650 / 500 Hz. One continuously running oscillator smooths amplitude and pitch changes sample by sample, including muting and volume changes. **Esc → Options → Beeper volume (%)** adjusts the level; 0% is silent, and the separate mute button is still available. The level is saved between sessions.
 
 ## Touch and hint controls
 
@@ -73,11 +73,16 @@ Options → On-screen controls offers Auto, On and Off on Windows and web. Auto 
 
 Hold/drag the left pad to steer. Gas and brake are independent: touch near the top for full pressure, near the bottom for light pressure; release to let go. Hold the brake while selecting P/R/N/D; P BRAKE is a separate toggle. Drag elsewhere to look. Multiple fingers can hold steering, pedals and look independently. Menu pauses and releases held controls; View changes the console camera. After parking, drag to orbit, use +/− to zoom and Return to cockpit to continue.
 
-The hint starts as a single `?` icon. Tap/click the icon, tap the touch toolbar’s `?`, or press T / controller X to expand or collapse it. Collapse preserves tutor cues; Options → Tutor turns them off. Collapse state persists. Menus scroll/reflow on narrow screens. Rendering fills the window at any aspect ratio without stretching the world or adding black bars.
+The hint starts as a single `?` icon. Tap/click the icon, tap the touch toolbar’s `?`, or press H or T / controller X to expand or collapse it. Collapse preserves tutor cues; Options → Tutor turns them off. Collapse state persists. Menus scroll/reflow on narrow screens. Rendering fills the window at any aspect ratio without stretching the world or adding black bars.
 
 
 Use **Full screen** on the touch toolbar to hide browser chrome where supported; tap **Exit full** to return. The display option is also available in Options. Browser controls use screen-density-aware sizing, with larger pedals and steering regions. Installing/adding the PWA to the home screen provides another way to launch without the address bar; browser support varies.
 
-The console now shows lateral warning bars as well as bumper sectors. Outer zones cover nearby body sides, corners and mirrors continuously; their colour and beeper reflect the same distances. This is generic geometric parking assistance, not a calibrated copy of the lesson car's sensor hardware.
+The console now shows lateral warning bars as well as bumper sectors. Bumper corners, the four lateral bars (front and rear half of each side) and the mirrors are separate zones: each shows only obstacles in its own area, together covering the whole car without gaps. The beeper uses the same distances. This is generic geometric parking assistance, not a calibrated copy of the lesson car's sensor hardware.
 
 Menus support finger swipes over their contents, including buttons; release without dragging to select an entry. In landscape touch mode, the gear row sits above the left steering pad so your right hand can keep pressing the brake during a shift. The surround display is now a tighter view of the area immediately around the car.
+
+
+The desktop shortcut list stays visible during driving and menus, on a mostly transparent background. It is not the parking-instructions panel: **H toggles the same instructions as `?`**, leaving the shortcut list visible. Menus reserve space beside the list (or above it in narrow desktop windows). Touch mode omits the keyboard list.
+
+The surround display now emulates a car-centred bird’s-eye view with uniform distance scale. It shows nearby obstacle footprints, your car and reverse guides without the previous stitched-camera seams and stretched cars. It is a virtual parking aid, not a measured reproduction of an OEM camera system or its blind spots. The separate physical reverse camera and distance indicators remain available together.

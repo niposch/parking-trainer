@@ -116,5 +116,7 @@ public sealed class DrivingModel
     }
     public double Sensor(IReadOnlyList<Obstacle> obstacles,bool front,int sector,double range=2.0)
         =>ParkingProximity.Measure(Pose,obstacles,front,sector,range);
+    public double SideSensor(IReadOnlyList<Obstacle> obstacles,bool front,int side,double range=2.0)
+        =>ParkingProximity.MeasureSide(Pose,obstacles,front,side,range);
     public static double AngleError(double a,double b) => System.Math.Abs(System.Math.Atan2(System.Math.Sin(a-b),System.Math.Cos(a-b)));
 }

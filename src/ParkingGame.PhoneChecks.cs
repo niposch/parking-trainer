@@ -13,6 +13,7 @@ public partial class ParkingGame
         int passed=0;
         void Check(bool ok,string name) {if(!ok) throw new InvalidOperationException(name);passed++;GD.Print("PHONE PASS: "+name);}
         if(DisplayServer.GetName()=="headless") {GetWindow().Size=new(1280,800);LayoutHud();}
+        int initialTouchMode=TouchMode;SetTouchMode(1);
         NewScenario(false);ShowMenuPage("options");
         await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
@@ -42,42 +43,69 @@ public partial class ParkingGame
         Check(RateSteering!=steeringBefore,"Normal menu taps still activate their button after a swipe");
         RateSteering=steeringBefore;
         Check(beep.PlaybackType==AudioServer.PlaybackType.Stream,"Alarm uses the stable streamed mixer on native and web");
-        foreach(var tone in sensorContinuous)
-        {
-            var data=tone.Data;var samples=new short[data.Length/2];
-            for(int i=0;i<samples.Length;i++) samples[i]=(short)(data[i*2]|data[i*2+1]<<8);
-            int peak=samples.Max(v=>Math.Abs((int)v));
-            int maxStep=samples.Zip(samples.Skip(1),(a,b)=>Math.Abs(a-b)).Max();
-            Check(peak>0 && peak<32768*.14,"Continuous tone retains more than 17 dB of digital headroom");
-            Check(Math.Abs(samples[0]-samples[^1])<=maxStep+1,"Continuous tone has no discontinuity at the loop seam");
-        }
         Paused=false;Car.Gear=Gear.R;Car.ParkingBrake=true;Muted=false;BeeperVolume=1;FrontRange=2;RearRange=.29;Sound(.01);
-        var playback=beep.GetStreamPlayback().GetInstanceId();
+        var playback=beep.GetStreamPlayback().GetInstanceId();var stream=beep.Stream;
         for(int i=0;i<100;i++) {RearRange=i%2==0?.31:.33;Sound(.01);}
-        Check(beep.Stream==sensorContinuous[1] && beep.GetStreamPlayback().GetInstanceId()==playback,"Red-zone jitter reuses one continuous playback without clicks from restarts");
+        Check(alarm.Continuous && beep.GetStreamPlayback().GetInstanceId()==playback,"Red-zone jitter reuses one playback without restarts");
+        foreach(double range in new[]{.7,.29,.35,1.2,.25,2,.28})
+        {RearRange=range;Sound(.01);Check(beep.Stream==stream && beep.GetStreamPlayback().GetInstanceId()==playback,"Every distance level retains one uninterrupted stream");}
         RearRange=.35;Sound(.01);
-        Check(beep.Stream==sensorPulses[1],"Continuous warning releases into pulses after four centimetres of clearance");
-        ApplyPose();UpdateViews();
-        bool Covered(Vector3 point3)=>surroundCameras.Select((cam,i)=>(Cam:cam,Index:i)).Any(pair=>
+        Check(!alarm.Continuous && alarm.Enabled,"Continuous warning releases into pulses after four centimetres of clearance");
+        Check(mirrorArms[1]==null && mirrorCentres[1].Y<=1.25f && mirrorCentres[1].Z>=-1.82f,"Centre mirror is lower/inboard with no projecting support rod");
+        AlarmChecks.Run((ok,name)=>Check(ok,name));
+        if(!IsWeb)
         {
-            if(pair.Index==0 && point3.Z>=CarSpec.CentreZ || pair.Index==1 && point3.Z<=CarSpec.CentreZ || pair.Index==2 && point3.X>=0 || pair.Index==3 && point3.X<=0) return false;
-            var world=vehicle.ToGlobal(point3);var pixel=pair.Cam.UnprojectPosition(world);
-            return !pair.Cam.IsPositionBehind(world) && pixel.X>3.8 && pixel.Y>3.8 && pixel.X<376.2 && pixel.Y<376.2;
-        });
+            var original=GetWindow().Size;
+            try
+            {
+                foreach(string page in new[]{"home","options","scenarios"})
+                {
+                    ShowMenuPage(page);float portraitUnit=0,portraitButton=0;
+                    foreach(var dimensions in new[]{new Vector2I(390,844),new Vector2I(844,390),new Vector2I(390,844),new Vector2I(844,390),new Vector2I(390,844)})
+                    {
+                        GetWindow().Size=dimensions;
+                        for(int frame=0;frame<6;frame++) await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
+                        var bounds=menu.GetGlobalRect();var viewport=GetViewport().GetVisibleRect().Size;
+                        Check(bounds.Position.X>=-1 && bounds.Position.Y>=-1 && bounds.End.X<=viewport.X+1 && bounds.End.Y<=viewport.Y+1,$"{page}: menu fits after resizing to {dimensions}");
+                        if(dimensions.X<dimensions.Y)
+                        {
+                            if(portraitUnit==0) {portraitUnit=menu.Scale.X;portraitButton=resumeButton.Size.Y;}
+                            Check(Math.Abs(menu.Scale.X-portraitUnit)<.001 && Math.Abs(resumeButton.Size.Y-portraitButton)<.01,$"{page}: returning to portrait preserves UI scale and button size");
+                        }
+                    }
+                }
+            }
+            finally {GetWindow().Size=original;await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);LayoutHud();}
+        }
+        SetTouchMode(2);Pause(false);Inspection=false;Demo=false;Tutor=true;HintCollapsed=false;ApplyHintLayout();UpdateShortcutPanel();
+        Check(shortcutPanel.Visible,"Desktop driving always displays the keyboard shortcut panel");
+        _UnhandledInput(new InputEventKey {Keycode=Key.H,Pressed=true});
+        Check(HintCollapsed && !tutorPanel.Visible && shortcutPanel.Visible && !Paused,"H collapses parking instructions while shortcuts remain visible");
+        _UnhandledInput(new InputEventKey {Keycode=Key.H,Pressed=true});
+        Check(!HintCollapsed && tutorPanel.Visible && shortcutPanel.Visible,"H expands the same instructions as the question-mark button");
+        Pause(true);UpdateShortcutPanel();
+        Check(shortcutPanel.Visible && !shortcutPanel.GetGlobalRect().Intersects(menu.GetGlobalRect()),"Shortcuts remain visible beside the desktop pause menu");
+        SetTouchMode(1);Pause(false);UpdateShortcutPanel();
+        Check(!shortcutPanel.Visible,"Touch driving does not show the desktop shortcut window");
+        SetTouchMode(initialTouchMode);Car.Gear=Gear.R;
+        ApplyPose();UpdateViews();
+        Vector2 Project(Vector3 local)=>surroundCamera.UnprojectPosition(vehicle.ToGlobal(local));
         int uncovered=0;
         for(int x=0;x<=24;x++) for(int z=0;z<=24;z++)
         {
-            var point3=new Vector3(-4+x/3f,.015f,(float)CarSpec.CentreZ-4+z/3f);
-            if(Math.Abs(point3.X)<.91 && point3.Z>-CarSpec.Front && point3.Z<CarSpec.Rear) continue;
-            if(!Covered(point3)) uncovered++;
+            var point3=new Vector3(-3.9f+7.8f*x/24,.015f,(float)CarSpec.CentreZ-3.9f+7.8f*z/24);
+            var pixel=Project(point3);
+            if(pixel.X<0 || pixel.Y<0 || pixel.X>600 || pixel.Y>600) uncovered++;
         }
-        foreach(int side in new[]{-1,1}) for(int i=0;i<=100;i++)
-        {
-            if(!Covered(new(side*.92f,.015f,-3.57f+4.49f*i/100))) uncovered++;
-            if(!Covered(new(-.92f+1.84f*i/100,.015f,side==1?.92f:-3.57f))) uncovered++;
-        }
-        Check(uncovered==0,$"Surround cameras cover the complete nearby ground apron without gaps ({uncovered} missing samples)");
-        Check(surroundCameras.All(c=>c.CullMask==1),"Camera composite excludes duplicate player geometry outside the calibrated car silhouette");
+        Check(uncovered==0,"Surround view covers every point of the 7.8 m apron without seams or blind wedges");
+        Check(surroundCamera.Projection==Camera3D.ProjectionType.Orthogonal,"Surround display uses uniform metric scale instead of fisheye projection");
+        var ground=Project(new(1,.015f,0));var roof=Project(new(1,1.8f,0));
+        Check(ground.DistanceTo(roof)<.01,"Raised obstacles do not stretch away from their ground footprint");
+        Check(Math.Abs(Project(new(1.1f,0,0)).DistanceTo(Project(new(1,0,0)))-7.5f)<.01,"Ten centimetres of clearance occupies the same number of pixels everywhere");
+        var beforeProjection=Project(new(1,.015f,0));
+        Car.Pose=new(4,5,.9);ApplyPose();UpdateViews();
+        Check(Project(new(1,.015f,0)).DistanceTo(beforeProjection)<.01,"Surround view stays car-centred and forward-up while turning");
+        Check(surroundCamera.CullMask==47 && sensorGraphic.Visible,"Surround view includes reverse guides and retains the separate distance indicators");
         NewScenario(false);
         return passed;
     }
