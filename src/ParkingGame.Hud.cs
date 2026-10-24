@@ -13,15 +13,17 @@ public partial class ParkingGame
     PanelContainer tutorPanel=null!;
     Button tutorHeading=null!,hintIcon=null!;
     bool HintCollapsed=false;
+    // Short screens (phone landscape): compact headers and panels that avoid the touch controls.
+    internal bool CompactUi;
+    bool CompactTouch=>CompactUi && TouchEnabled;
     Label hintKey=null!;
     void ToggleHint() {HintCollapsed=Tutor?!HintCollapsed:false;Tutor=true;ApplyHintLayout();SaveSettings();}
     void ApplyHintLayout()
     {
         tutorText.Visible=!HintCollapsed;
         bool tutor=Tutor&&Mode!=TrainingMode.Test;
-        tutorPanel.Visible=tutor&&!HintCollapsed&&!Paused&&!Inspection;
+        tutorPanel.Visible=tutor&&!HintCollapsed&&!Paused&&!Inspection&&!BriefingVisible&&!(CompactTouch&&CoachText!="");
         hintIcon.Visible=tutor&&HintCollapsed&&!Paused&&!Inspection&&!TouchEnabled;
-        tutorPanel.Size=new(370,210);
         hintIcon.Size=new(44,44);
     }
     Button tutorButton=null!,guideButton=null!,steeringButton=null!,muteButton=null!;
@@ -125,14 +127,28 @@ public partial class ParkingGame
         foreach(var row in responsiveRows) row.Vertical=narrow;
         FitMenu(size,unit);
         UpdateShortcutPanel();
-        menuTitle.AddThemeFontSizeOverride("font_size",narrow?22:28);
-        float tutorWidth=TouchEnabled&&pixels.X>=620&&pixels.X>pixels.Y&&pixels.Y<520?pixels.X-320:pixels.X-24;
-        float tutorScale=unit*Mathf.Min(1,tutorWidth/370);
-        tutorPanel.Scale=Vector2.One*tutorScale;tutorPanel.Position=new(12*unit,(TouchEnabled?88:12)*unit);
+        CompactUi=pixels.Y<520;
+        menuTitle.AddThemeFontSizeOverride("font_size",CompactUi?20:narrow?22:28);
+        menuSummary.Visible=MenuPage!="home" && !CompactUi;
+        foreach(var card in exerciseCards) card.CustomMinimumSize=new(0,CompactUi?122:150);
+        foreach(var diagram in parkingDiagrams) diagram.CustomMinimumSize=new(0,CompactUi?62:92);
+        homeDiagram.CustomMinimumSize=new(0,CompactUi?64:96);
+        LayoutTutor(size,pixels,unit);
         hintIcon.Scale=Vector2.One*unit;hintIcon.Position=new(12*unit,12*unit);
         noticeLabel.Scale=Vector2.One*unit;
-        noticeLabel.Size=new(Mathf.Min(520,pixels.X-24),70);
-        noticeLabel.Position=new((size.X-noticeLabel.Size.X*unit)/2,size.Y-(TouchEnabled?260:ControlHints?220:90)*unit);
+        if(CompactTouch)
+        {
+            // Phone landscape: notices go in the free gap between steering pad and pedals.
+            var steer=InterfaceLayout.TouchRegions(size,unit,false)["steer"];var brake=InterfaceLayout.TouchRegions(size,unit,false)["brake"];
+            float left=steer.End.X/unit+8,right=brake.Position.X/unit-8;
+            noticeLabel.Size=new(Mathf.Max(160,right-left),70);
+            noticeLabel.Position=new(left*unit,size.Y-90*unit);
+        }
+        else
+        {
+            noticeLabel.Size=new(Mathf.Min(520,pixels.X-24),70);
+            noticeLabel.Position=new((size.X-noticeLabel.Size.X*unit)/2,size.Y-(TouchEnabled?260:ControlHints?220:90)*unit);
+        }
         LayoutOnboarding(size,pixels,unit);LayoutContact(size,pixels,unit);LayoutBriefing(size,pixels,unit);
         touchControls?.ResizeToViewport();
     }
@@ -142,6 +158,17 @@ public partial class ParkingGame
         if(!IsInstanceValid(menu)) return;
         menu.Visible=Paused;menuBackdrop.Visible=Paused;
         menuTitle.Text=Tr(MenuPage switch {"scenarios"=>"Choose your scenario","options"=>"Options","controls"=>"Controller setup & controls","map"=>"Teaching map","howto"=>"How to drive",_=>"Parking Practice"});
+        if(Scene!=null)
+        {
+            homeDiagram.Exercise=Exercise;homeDiagram.Mirrored=MirrorBay;homeDiagram.QueueRedraw();
+            homeTitle.Text=ExerciseName();
+            homeDetails.Text=string.Format(Tr("{0} · {1} · {2:0.00} m {3} · {4} coaching · layout {5}"),Tr(DrillTitle(Scene.Drill)),DifficultyTitle(Difficulty),Scene.Space,Tr(SpaceName(Exercise)),Tr(ModeTitle(Mode)),Seed);
+            homeHazards.Text=Scene.Features.Count>0?Tr("Hazards: ")+string.Join(" · ",Scene.Features.Select(f=>Tr(f))):"";
+            homeHazards.Visible=homeHazards.Text!="";
+        }
+        menuFooter.Visible=!TouchEnabled;
+        // The home card already says what the scenario is; short screens need the room.
+        menuSummary.Visible=MenuPage!="home" && !CompactUi;
         menuSummary.Text=MenuPage switch
         {
             "scenarios"=>Tr("Choose a parking type and how much room you have. Starting a new scenario replaces the current attempt."),
@@ -182,7 +209,7 @@ public partial class ParkingGame
         sensorGraphic.SetRanges(FrontSectors,RearSectors,SideSectors);
         cameraLabel.Text=CameraMode==0?Tr("REAR + SENSORS"):Tr("SURROUND + SENSORS");
         noticeLabel.Text=Notice!=""?Tr(Notice):Demo?Tr("DEMONSTRATION · observe the mirrors"):successTime>.8&&Mode!=TrainingMode.Test?Tr(Scene.Assess(Car.Pose).Grade==Grade.Good?"Position looks good. Select P and apply the parking brake.":"Acceptable position. A small correction would make it good."):"";
-        if(Inspection) noticeLabel.Text=Tr(TouchEnabled?"PARKING INSPECTION · drag to orbit":"PARKING INSPECTION · mouse / right stick to orbit · wheel to zoom");
+        if(Inspection) noticeLabel.Text=CompactTouch?"":Tr(TouchEnabled?"PARKING INSPECTION · drag to orbit":"PARKING INSPECTION · mouse / right stick to orbit · wheel to zoom");
 
         int index=Scene.ClosestPath(Car.Pose);
         double progress=(double)Math.Max(0,index-Scene.ApproachEnd)/Math.Max(1,Scene.Path.Count-1-Scene.ApproachEnd);
@@ -252,5 +279,25 @@ public partial class ParkingGame
             (_,Exercise.TurnInRoad)=>("05 / SETTLE & SECURE","Straighten in your lane, stop inside the green zone, select P and apply the parking brake."),
             _=>("04 / STRAIGHTEN & SECURE",SecureText)
         };
+    }
+    // Free space for top-left panels on touch screens: left of the toolbar and,
+    // in landscape, above the gear row.
+    (float Width,float Top,float Height) TouchPanelArea(Vector2 pixels)
+    {
+        if(!TouchEnabled) return (370,12,pixels.Y-24);
+        if(!CompactUi) return (Mathf.Min(370,pixels.X-24),88,pixels.Y-88-12);
+        float toolbarLeft=pixels.X-20-56*3-8*3-72;
+        float gearTop=pixels.Y-20-Mathf.Min(160,pixels.Y*.42f)-8-56;
+        return (Mathf.Clamp(toolbarLeft-24,240,560),12,gearTop-12-8);
+    }
+    void LayoutTutor(Vector2 size,Vector2 pixels,float unit)
+    {
+        var area=TouchPanelArea(pixels);
+        bool compact=CompactTouch;
+        tutorText.CustomMinimumSize=compact?new(area.Width-40,0):new(330,130);
+        tutorPanel.Size=new(compact?area.Width:370,0);
+        tutorPanel.Size=new(tutorPanel.Size.X,tutorPanel.GetCombinedMinimumSize().Y);
+        float fit=Mathf.Min(1,Mathf.Min((pixels.X-24)/tutorPanel.Size.X,area.Height/Mathf.Max(1,tutorPanel.Size.Y)));
+        tutorPanel.Scale=Vector2.One*unit*fit;tutorPanel.Position=new(12*unit,area.Top*unit);
     }
 }

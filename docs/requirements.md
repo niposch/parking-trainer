@@ -259,3 +259,7 @@ Owner goal: "play this game and you'll know how to park no matter what". The too
 - **VEH-2:** Rear side glass: a rear-door window with a raked rear frame, a door post and a fixed quarter window under a solid C-pillar, as on a typical hatchback.
 
 - **INP-4 (24 October 2026):** Controller map without overlaps: Start menu; A/LB/RB select P/R/D directly; Y parking brake; X camera screen; B console glance and View shoulder glance (each toggles back to forward); right-stick click looks forward; L3 hold centres the wheel; D-pad up/down toggle instructions and the correction plan. In menus B goes back; in the report A/B return, the D-pad scrubs and LB/RB zoom. Duplicate copies of one press from another device type (Steam Input key plus button) are ignored for every toggle.
+
+- **VIS-3 (24 October 2026):** Side mirrors must show the car's own flank along the inner edge, seen from outside, with the horizon slightly above centre. The passenger mirror dips toward the kerb in reverse. UI text and world markers must not rely on glyphs missing from the web font.
+
+- **UX-6 (24 October 2026):** Pause home is a current-scenario card with Continue/Retry/New layout/Demo beside secondary actions, stacking on portrait. On phone landscape, no panel may overlap the touch controls: instructions and coaching sit above the gear row, notices sit between the steering pad and the pedals, the briefing suspends the controls, and the report scrolls above the inspection buttons.

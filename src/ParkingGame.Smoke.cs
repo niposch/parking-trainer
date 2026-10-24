@@ -74,6 +74,7 @@ public partial class ParkingGame
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.DpadDown,Pressed=true});await PhysicsFrames(3);
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.DpadDown,Pressed=false});
             Check(GetViewport().GuiGetFocusOwner()!=resumeButton,"Controller D-pad navigates pause menu focus");
+            chooseScenarioButton.GrabFocus();await PhysicsFrames(2);
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.A,Pressed=true});await PhysicsFrames(3);
             Input.ParseInputEvent(new InputEventJoypadButton {Device=15,ButtonIndex=JoyButton.A,Pressed=false});await PhysicsFrames(3);
             Check(MenuPage=="scenarios" && Paused,"Controller accept opens scenario selection");

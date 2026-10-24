@@ -76,6 +76,5 @@ public partial class ParkingGame
         float scale=unit*Mathf.Min(1,Mathf.Min((pixels.X-24)/480,(pixels.Y-24)/Mathf.Max(1,briefing.GetCombinedMinimumSize().Y)));
         briefing.Scale=Vector2.One*scale;briefing.Size=new(480,briefing.GetCombinedMinimumSize().Y);
         briefing.Position=(size-briefing.Size*scale)/2;
-        if(IsInstanceValid(touchControls)) touchControls.Blocker=briefing.Visible?briefing.GetGlobalRect():default;
     }
 }

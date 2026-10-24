@@ -17,9 +17,11 @@ public partial class ParkingDiagram : Control
     public override void _Ready() { MouseFilter=MouseFilterEnum.Ignore;Resized+=QueueRedraw; }
     public override void _Draw()
     {
-        var scale=Size/new Vector2(220,130);
+        // Uniform scale, centred: short, wide cards (phone landscape) must not squash the sketch.
+        float scale=Mathf.Min(Size.X/220,Size.Y/130);
+        var origin=(Size-new Vector2(220,130)*scale)/2;
         // Flip for a left-side space, keeping labels driver-relative.
-        DrawSetTransform(FlipHorizontally?new Vector2(Size.X,0):Vector2.Zero,0,new(FlipHorizontally?-scale.X:scale.X,scale.Y));
+        DrawSetTransform(FlipHorizontally?origin+new Vector2(220*scale,0):origin,0,new(FlipHorizontally?-scale:scale,scale));
         Color line=new("6b7f78"),car=new("879b92"),active=new("254c3d"),arrow=new("406a39"),wall=new("4d5a55");
         void Rect(float x,float y,float w,float h,Color color)=>DrawStyleBox(new StyleBoxFlat {BgColor=color,CornerRadiusTopLeft=4,CornerRadiusTopRight=4,CornerRadiusBottomLeft=4,CornerRadiusBottomRight=4},new(x,y,w,h));
         void Arrow(Vector2[] points)

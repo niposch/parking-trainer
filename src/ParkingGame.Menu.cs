@@ -14,7 +14,9 @@ public partial class ParkingGame
     internal bool OppositeRow,SelectedOppositeRow;
     internal TrainingMode SelectedMode=TrainingMode.Guided;
     Button[] drillButtons=null!,aisleButtons=null!,clutterButtons=null!,modeButtons=null!;
-    Button hintsButton=null!,cuesButton=null!;
+    Button hintsButton=null!,cuesButton=null!,chooseScenarioButton=null!;
+    ParkingDiagram homeDiagram=null!;
+    Label homeTitle=null!,homeDetails=null!,homeHazards=null!,menuFooter=null!;
     internal Difficulty Difficulty=Difficulty.Standard,SelectedDifficulty=Difficulty.Standard;
     internal int DisplayMode;
     internal OptionButton displaySelector=null!;
@@ -52,19 +54,35 @@ public partial class ParkingGame
             var box=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};box.AddThemeConstantOverride("separation",12);
             host.AddChild(box);menuPages[name]=box;return box;
         }
+        // Home: a card for the current scenario with its main actions, beside a
+        // compact column of everything else. Stacks vertically on narrow screens.
         var home=Page("home");
-        resumeButton=Button(home,"Continue driving",()=>Pause(false));resumeButton.CustomMinimumSize=new(0,58);
+        var homeRow=Row(home,14);
+        var homeCard=new PanelContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill,SizeFlagsStretchRatio=1.6f};
+        var cardStyle=Style(new("fbfbf4"),new("c8cebf"),10);cardStyle.ContentMarginTop=cardStyle.ContentMarginBottom=12;homeCard.AddThemeStyleboxOverride("panel",cardStyle);
+        homeRow.AddChild(homeCard);
+        var cardBox=new VBoxContainer();cardBox.AddThemeConstantOverride("separation",6);homeCard.AddChild(cardBox);
+        homeDiagram=new ParkingDiagram {CustomMinimumSize=new(0,96),SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};cardBox.AddChild(homeDiagram);
+        homeTitle=Text(cardBox,"",19);homeTitle.AutowrapMode=TextServer.AutowrapMode.WordSmart;
+        homeDetails=Text(cardBox,"",14,new("52675f"));homeDetails.AutowrapMode=TextServer.AutowrapMode.WordSmart;
+        homeHazards=Text(cardBox,"",13,new("8a5a2b"));homeHazards.AutowrapMode=TextServer.AutowrapMode.WordSmart;
+        resumeButton=Button(cardBox,"Continue driving",()=>Pause(false));resumeButton.CustomMinimumSize=new(0,54);
         resumeButton.AddThemeStyleboxOverride("normal",Style(accent,null,7));
-        Button(home,"Choose scenario",OpenScenarioSelection);
-        Button(home,"Surprise me: random scenario",StartRandomMix).TooltipText=Tr("A random parking type, side, size, task and obstacles.");
-        Button(home,"How to drive",()=>ShowMenuPage("howto"));
-        Button(home,"Options",()=>ShowMenuPage("options"));
-        var retry=Row(home);
-        Button(retry,"Retry this layout",()=>NewScenario(false)).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
-        Button(retry,"New variation",()=>NewScenario(true)).SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;
-        Button(home,"Watch approach + parking demonstration",StartDemo);
-        if(IsWeb) Text(home,"Continue driving enables audio. With touch controls off, click to capture the mouse. Esc pauses and releases it.",14).AutowrapMode=TextServer.AutowrapMode.WordSmart;
-        else Button(home,"Exit game",()=>{SaveSettings();GetTree().Quit();});
+        var quick=new HBoxContainer();quick.AddThemeConstantOverride("separation",8);cardBox.AddChild(quick);
+        foreach(var (label,action,tip) in new (string,Action,string)[]{("Retry",()=>NewScenario(false),"Same layout again"),("New layout",()=>NewScenario(true),"Same kind of scenario, new layout"),("Demo",StartDemo,"Watch the approach and parking demonstration")})
+        {
+            var b=Button(quick,label,action);b.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill;b.TooltipText=Tr(tip);b.AddThemeFontSizeOverride("font_size",15);
+            // Narrow phone cards need the label room more than the usual padding.
+            foreach(string state in new[]{"normal","hover","pressed"})
+            {var style=(StyleBoxFlat)b.GetThemeStylebox(state).Duplicate();style.ContentMarginLeft=style.ContentMarginRight=6;b.AddThemeStyleboxOverride(state,style);}
+        }
+        var side=new VBoxContainer {SizeFlagsHorizontal=Control.SizeFlags.ExpandFill};side.AddThemeConstantOverride("separation",8);homeRow.AddChild(side);
+        chooseScenarioButton=Button(side,"Choose scenario",OpenScenarioSelection);
+        Button(side,"Surprise me",StartRandomMix).TooltipText=Tr("A random parking type, side, size, task and obstacles.");
+        Button(side,"How to drive",()=>ShowMenuPage("howto"));
+        Button(side,"Options",()=>ShowMenuPage("options"));
+        if(IsWeb) Text(side,"Continue driving enables audio. With touch controls off, click to capture the mouse. Esc pauses and releases it.",13,new("52675f")).AutowrapMode=TextServer.AutowrapMode.WordSmart;
+        else Button(side,"Exit game",()=>{SaveSettings();GetTree().Quit();});
 
         var scenarios=Page("scenarios");
         Text(scenarios,"PARKING TYPE",13,new("52675f"));
@@ -159,7 +177,7 @@ public partial class ParkingGame
         howToFirst=Button(howTo,"Start driving",()=>{seenHowTo=true;SaveSettings();if(MenuPage=="howto") Pause(false);});
         howToFirst.AddThemeStyleboxOverride("normal",Style(accent,null,7));
         var map=Page("map");mapRect=Image(map,mapViewport);mapRect.CustomMinimumSize=new(0,430);mapRect.StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered;
-        Text(root,"D-pad / arrows: navigate   ·   A / Enter: select   ·   B / Esc: back",13,new("52675f")).AutowrapMode=TextServer.AutowrapMode.WordSmart;
+        menuFooter=Text(root,"D-pad / arrows: navigate   ·   A / Enter: select   ·   B / Esc: back",13,new("52675f"));menuFooter.AutowrapMode=TextServer.AutowrapMode.WordSmart;
         ShowMenuPage("home");
     }
     Button howToFirst=null!;

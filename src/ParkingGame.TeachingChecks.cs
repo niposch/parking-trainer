@@ -116,6 +116,21 @@ public partial class ParkingGame
         Button(JoyButton.Back);Check(Math.Abs(LookYaw-(Mathf.Pi-.25f))<.01f && !Paused,"View looks over the shoulder instead of opening the menu");
         bool collapsed=HintCollapsed;Button(JoyButton.DpadUp);Check(HintCollapsed!=collapsed,"D-pad up toggles the parking instructions");
         ToggleHint();selectedController=previousController;
+        Input.ActionPress(BrakeAction,1);await PhysicsFrames(2);Shift(Gear.D);await PhysicsFrames(90);
+        var level=mirrorScreens[2].Basis.Z;
+        Shift(Gear.R);await PhysicsFrames(90);
+        var dipped=mirrorScreens[2].Basis.Z;
+        Check(MirrorDip==1 && dipped.Y<level.Y-.1f && mirrorScreens[0].Basis.Z.IsEqualApprox(mirrorScreens[0].Basis.Z),"In reverse the passenger mirror tilts down toward the kerb");
+        Shift(Gear.D);await PhysicsFrames(90);
+        Check(MirrorDip==0 && mirrorScreens[2].Basis.Z.IsEqualApprox(level),"Leaving reverse returns the passenger mirror");
+        var eyeGlobal=vehicle.ToGlobal(PlayerCabin.EyeTarget(0,EyeHeight));
+        foreach(int side in new[]{0,2})
+        {
+            // The virtual eye sits further out than a plain reflection, as with glass on a real arm.
+            var plain=eye.Position-2*mirrorScreens[side].Basis.Z*(eye.Position-mirrorCentres[side]).Dot(mirrorScreens[side].Basis.Z);
+            Check(Math.Abs(vehicle.ToLocal(mirrorCameras[side].GlobalPosition).X)-Math.Abs(plain.X)>.15f,"Side-mirror view is taken from outboard so the car's flank shows its paint, not the lining");
+        }
+        Shift(Gear.P);Input.ActionRelease(BrakeAction);
         Pause(true);BeginPedalBinding(SteerAction);
         _Input(new InputEventJoypadMotion {Device=15,Axis=JoyAxis.RightX,AxisValue=-.9f});
         Check(steerBinding is {Axis:JoyAxis.RightX,AxisValue:-1} && bindingAction=="","Steering can be bound to another stick axis for unusual controller layouts");
@@ -124,6 +139,28 @@ public partial class ParkingGame
         Check(GodotReadsGamepad(0x28de,0x1304,"Steam Controller")==Input.GetConnectedJoypads().Any(d=>JoyIds(d).Vendor==0x28de||Input.GetJoyName(d)=="Steam Controller"),"The compatibility driver only takes a Steam Controller that Godot cannot read");
         ShowMenuPage("howto");
         Check(menuPages["howto"].Visible && howToFirst.HasFocus(),"How-to-drive page is reachable and focused");
+        if(!IsWeb)
+        {
+            var window=GetWindow().Size;
+            try
+            {
+                // Phone landscape: panels must sit clear of the touch controls.
+                GetWindow().Size=new(844,390);SetTouchMode(1);Exercise=Exercise.ReverseBay;Drill=Drill.Park;HintCollapsed=false;Tutor=true;Mode=TrainingMode.Guided;
+                NewScenario(false);Pause(false);for(int frame=0;frame<8;frame++) await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
+                var view=GetViewport().GetVisibleRect().Size;float unit=InterfaceLayout.Unit(GetViewport());
+                var driving=InterfaceLayout.TouchRegions(view,unit,false);
+                Check(CompactTouch && tutorPanel.Visible && driving.Values.All(r=>!r.Intersects(tutorPanel.GetGlobalRect())),"Phone landscape: instructions stay clear of the gear row, pedals and steering pad");
+                Car.Pose=Scene.Goal;Car.Gear=Gear.P;Car.ParkingBrake=true;Car.Travel=5;
+                for(int frame=0;frame<8;frame++) await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
+                var inspecting=InterfaceLayout.TouchRegions(view,unit,true);
+                Check(Inspection && reportPanel.Visible && inspecting.Values.All(r=>!r.Intersects(reportPanel.GetGlobalRect())) && reportPanel.GetGlobalRect().End.Y<=view.Y,"Phone landscape: the report scrolls above the Return and zoom buttons");
+                Check(reportDiagram.GetIndex()==1 && reportDiagram.GetGlobalRect().Position.Y<reportBody.GetGlobalRect().Position.Y,"Phone landscape: the replay comes before the report text");
+                EndInspection();
+                Pause(true);ShowMenuPage("home");for(int frame=0;frame<6;frame++) await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);
+                Check(resumeButton.GetGlobalRect().End.Y<=menu.GetGlobalRect().End.Y && chooseScenarioButton.GetGlobalRect().End.Y<=menu.GetGlobalRect().End.Y && !menuSummary.Visible,"Phone landscape: the home card and actions fit without scrolling");
+            }
+            finally {GetWindow().Size=window;for(int frame=0;frame<4;frame++) await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);LayoutHud();}
+        }
         Exercise=Exercise.Parallel;Drill=Drill.Park;Clutter=Clutter.None;OppositeRow=false;Difficulty=Difficulty.Standard;MirrorBay=false;
         SetTouchMode(previousTouch);NewScenario(false);
         return passed;

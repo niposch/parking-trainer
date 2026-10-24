@@ -96,7 +96,16 @@ public static class WorldFactory
             Line(root,new((float)a.X,.025f,(float)a.Z),new((float)b.X,.025f,(float)b.Z),.045f,green);
         }
         var centre=scene.Goal.Point(0,CarSpec.CentreZ);
-        var text=new Label3D { Text=scene.FreeGoal?"→":"P",FontSize=160,PixelSize=.007f,Modulate=green,Position=new((float)centre.X,.03f,(float)centre.Z),Rotation=new(-Mathf.Pi/2,scene.FreeGoal?(float)scene.Goal.Yaw+Mathf.Pi/2:0,0),NoDepthTest=false };
+        if(scene.FreeGoal)
+        {
+            // Direction of travel through the lane zone, drawn as lines (no font glyph needed).
+            Vector3 P(double x,double z) {var p=scene.Goal.Point(x,z);return new((float)p.X,.03f,(float)p.Z);}
+            double tip=CarSpec.CentreZ-1.2,tail=CarSpec.CentreZ+1.2;
+            Line(root,P(0,tail),P(0,tip),.12f,green);
+            Line(root,P(0,tip),P(-.5,tip+.6),.12f,green);Line(root,P(0,tip),P(.5,tip+.6),.12f,green);
+            return;
+        }
+        var text=new Label3D { Text="P",FontSize=160,PixelSize=.007f,Modulate=green,Position=new((float)centre.X,.03f,(float)centre.Z),Rotation=new(-Mathf.Pi/2,0,0),NoDepthTest=false };
         root.AddChild(text);
     }
     static void Prop(Node3D root,Obstacle obstacle)

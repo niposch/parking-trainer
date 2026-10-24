@@ -48,24 +48,28 @@ internal partial class TouchControls : Control
         foreach(var style in new[]{normal,selected}) {style.CornerRadiusTopLeft=style.CornerRadiusTopRight=style.CornerRadiusBottomLeft=style.CornerRadiusBottomRight=(int)(8*unit);}
         QueueRedraw();
     }
-    public void Pointer(int index,Vector2 position,bool pressed,bool cancelled=false)
+    // Returns whether the touch was used; touches over Blocker (an open report or
+    // card) belong to the interface underneath, so it can scroll and take taps.
+    public bool Pointer(int index,Vector2 position,bool pressed,bool cancelled=false)
     {
-        if(!pressed || cancelled) {pointers.Remove(index);anchors.Remove(index);Recalculate();return;}
-        if(!Active) return;
+        if(!pressed || cancelled) {bool owned=pointers.Remove(index);anchors.Remove(index);Recalculate();return owned;}
+        if(!Active) return false;
         Layout();
-        if(HintHeader.HasPoint(position)) {Command("tutor");return;}
-        if(Blocker.HasPoint(position)) {Command("briefing");return;}
+        if(HintHeader.HasPoint(position)) {Command("tutor");return true;}
+        if(Blocker.HasPoint(position) && !regions.Values.Any(r=>r.HasPoint(position))) return false;
         string target=regions.FirstOrDefault(pair=>pair.Value.HasPoint(position)).Key??"look";
         if(target is "gas" or "brake" or "steer" or "look") pointers[index]=(target,position);
         if(target=="steer") anchors[index]=position;
-        else Command(target);
+        else if(target is not ("gas" or "brake" or "look")) Command(target);
         Recalculate();
+        return true;
     }
-    public void Drag(int index,Vector2 position)
+    public bool Drag(int index,Vector2 position)
     {
-        if(!pointers.TryGetValue(index,out var pointer)) return;
+        if(!pointers.TryGetValue(index,out var pointer)) return false;
         if(pointer.Target=="look") Look((position-pointer.Position)/unit);
         pointers[index]=(pointer.Target,position);Recalculate();
+        return true;
     }
     void Recalculate()
     {
@@ -88,16 +92,15 @@ internal partial class TouchControls : Control
     public override void _Input(InputEvent input)
     {
         if(!Active) return;
-        switch(input)
+        bool used=input switch
         {
-            case InputEventScreenTouch touch: Pointer(touch.Index,touch.Position,touch.Pressed,touch.Canceled);break;
-            case InputEventScreenDrag drag: Drag(drag.Index,drag.Position);break;
-            case InputEventMouseButton mouse when mouse.Device!=InputEvent.DeviceIdEmulation && pointers.Keys.All(i=>i<0) && mouse.ButtonIndex==MouseButton.Left:
-                Pointer(-1,mouse.Position,mouse.Pressed);break;
-            case InputEventMouseMotion mouse when mouse.Device!=InputEvent.DeviceIdEmulation && pointers.ContainsKey(-1): Drag(-1,mouse.Position);break;
-            default:return;
-        }
-        GetViewport().SetInputAsHandled();
+            InputEventScreenTouch touch=>Pointer(touch.Index,touch.Position,touch.Pressed,touch.Canceled),
+            InputEventScreenDrag drag=>Drag(drag.Index,drag.Position),
+            InputEventMouseButton mouse when mouse.Device!=InputEvent.DeviceIdEmulation && pointers.Keys.All(i=>i<0) && mouse.ButtonIndex==MouseButton.Left=>Pointer(-1,mouse.Position,mouse.Pressed),
+            InputEventMouseMotion mouse when mouse.Device!=InputEvent.DeviceIdEmulation && pointers.ContainsKey(-1)=>Drag(-1,mouse.Position),
+            _=>false
+        };
+        if(used) GetViewport().SetInputAsHandled();
     }
     void LabelAt(Rect2 rect,string text,int fontSize,Color color)
     {

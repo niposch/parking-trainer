@@ -62,10 +62,24 @@ public partial class ParkingGame
         controlStrip.Position=new((size.X-ControlStrip.DesignWidth*stripScale)/2,size.Y-(ControlStrip.DesignHeight+12)*stripScale);
         promptLabel.Scale=Vector2.One*unit;promptLabel.Size=new(Mathf.Min(620,pixels.X-24),48);
         promptLabel.Position=new((size.X-promptLabel.Size.X*unit)/2,controlStrip.Position.Y-54*unit);
-        float coachScale=unit*Mathf.Min(1,(pixels.X-24)/370);
-        coachPanel.Scale=Vector2.One*coachScale;coachPanel.Size=new(370,coachPanel.GetCombinedMinimumSize().Y);
-        float top=tutorPanel.Visible?tutorPanel.Position.Y+tutorPanel.Size.Y*tutorPanel.Scale.Y+8*unit:(TouchEnabled?88:12)*unit;
-        coachPanel.Position=new(tutorPanel.Visible||TouchEnabled?12*unit:64*unit,top);
+        LayoutTutor(size,pixels,unit);
+        var area=TouchPanelArea(pixels);
+        if(CompactTouch)
+        {
+            // Phone landscape: coaching takes the instructions' place above the gear row.
+            coachLabel.CustomMinimumSize=new(area.Width-26,0);
+            coachPanel.Size=new(area.Width,0);coachPanel.Size=new(area.Width,coachPanel.GetCombinedMinimumSize().Y);
+            coachPanel.Scale=Vector2.One*unit*Mathf.Min(1,area.Height/Mathf.Max(1,coachPanel.Size.Y));
+            coachPanel.Position=new(12*unit,area.Top*unit);
+        }
+        else
+        {
+            coachLabel.CustomMinimumSize=new(344,0);
+            float coachScale=unit*Mathf.Min(1,(pixels.X-24)/370);
+            coachPanel.Scale=Vector2.One*coachScale;coachPanel.Size=new(370,coachPanel.GetCombinedMinimumSize().Y);
+            float top=tutorPanel.Visible?tutorPanel.Position.Y+tutorPanel.Size.Y*tutorPanel.Scale.Y+8*unit:(TouchEnabled?88:12)*unit;
+            coachPanel.Position=new(tutorPanel.Visible||TouchEnabled?12*unit:64*unit,top);
+        }
         LayoutReport(pixels,unit);
     }
 }

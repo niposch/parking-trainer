@@ -145,3 +145,15 @@ On first launch on a desktop, the pause menu opens on **How to drive**, which is
 ## Controller map (24 October 2026)
 
 The controller layout was reworked so that each driving function has exactly one button, with no button doing different things depending on hidden state. Gears are direct (A = P, LB = R, RB = D; neutral is keyboard-only), the parking brake moved from the right-stick click to Y so looking around cannot release it, and the camera glances toggle back to the forward view. Start is the only menu button; View is now the over-the-shoulder glance. In menus, B goes back; in the briefing, A or B closes it; in the report, A or B returns to the cockpit, the D-pad scrubs the replay and LB/RB zoom. Steam Input layouts that send a key alongside a button (for example B and Esc) no longer trigger an action twice: the copy from the other device type is ignored for 0.4 s.
+
+## Side mirrors and web symbols (24 October 2026)
+
+The door mirrors are aimed the way a driver normally sets them: the horizon slightly above centre, and your own car's flank along the inner quarter of the glass. Their view is taken from slightly outboard, as if the glass sat on a real mirror arm, so the flank shows its paint instead of the interior lining. The driver-side mirror is close to flat and the passenger mirror slightly convex. **In reverse, the passenger mirror dips down** toward the rear wheel and kerb, as in many modern cars, and returns when you leave R.
+
+The browser font lacks some symbols, so on-screen text and markers no longer use them: the report says "Left / Right arrows" (or "D-pad left / right"), the landmark is a drawn marker, and lane-zone targets show a drawn arrow.
+
+## Pause menu and phone layout (24 October 2026)
+
+The pause menu's home page is a **scenario card** with a diagram, the parking type and side, task, size, coaching level and hazards. It holds the main actions: **Continue driving**, **Retry**, **New layout** and **Demo**. Next to it is a compact column with Choose scenario, Surprise me, How to drive, Options and Exit. On portrait phones the two stack. The menu shrinks to its content, and on touch screens the gamepad navigation hint is hidden.
+
+On short landscape screens (phones): menu headers are compact, and the instructions panel spans the top-left above the gear row instead of covering it. Coaching messages take the same place, and notices appear in the gap between the steering pad and the pedals. The briefing card hides the driving controls while it is open. The parking report becomes a scrollable panel that stays above the Return and zoom buttons, with the replay directly under the grade and the details below it. Parking diagrams keep their proportions at any card size.

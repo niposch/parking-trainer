@@ -6,12 +6,15 @@ public partial class ParkingGame
     PanelContainer reportPanel=null!;
     Label reportTitle=null!,reportBody=null!,reportFooter=null!;
     ReportDiagram reportDiagram=null!;
+    TouchMenuScroll reportScroll=null!;
     internal Assessment? LastReport;
     internal bool LastTestPassed;
     void SetupReport()
     {
-        reportPanel=Panel(hud,new(12,12),new(400,0),cream);
-        var box=new VBoxContainer();box.AddThemeConstantOverride("separation",6);reportPanel.AddChild(box);
+        reportPanel=Panel(hud,new(12,12),new(400,0),cream);reportPanel.MouseFilter=Control.MouseFilterEnum.Stop;
+        // Scrolls on short screens so the replay is never cut off.
+        reportScroll=new TouchMenuScroll {HorizontalScrollMode=ScrollContainer.ScrollMode.Disabled,MouseFilter=Control.MouseFilterEnum.Pass};reportPanel.AddChild(reportScroll);
+        var box=new VBoxContainer();box.AddThemeConstantOverride("separation",6);reportScroll.AddChild(box);
         reportTitle=Text(box,"",20);reportTitle.AutowrapMode=TextServer.AutowrapMode.WordSmart;reportTitle.CustomMinimumSize=new(364,0);
         reportBody=Text(box,"",14);reportBody.AutowrapMode=TextServer.AutowrapMode.WordSmart;reportBody.CustomMinimumSize=new(364,0);
         reportDiagram=new ReportDiagram {CustomMinimumSize=new(364,250)};box.AddChild(reportDiagram);
@@ -47,15 +50,25 @@ public partial class ParkingGame
         if(wheelTurns>.5) lines.Add(string.Format(Tr("Steering wheel turned {0:0.0} turns at a standstill. Try steering while creeping."),wheelTurns));
         if(Scene.Features.Count>0) lines.Add(Tr("Hazards: ")+string.Join(" · ",Scene.Features.Select(f=>Tr(f))));
         reportBody.Text=string.Join("\n",lines);
-        reportFooter.Text=TouchEnabled?Tr("Return to cockpit to correct · Menu for retry or a new variation"):Tr("← / →: scrub the replay · Enter / B: back to the cockpit to correct · F5: retry · F6: new variation");
+        reportFooter.Text=TouchEnabled?Tr("Return to cockpit to correct · Menu for retry or a new variation"):Tr(Pad!=null?"D-pad left / right: scrub the replay · A / B: back to the cockpit to correct":"Left / Right arrows: scrub the replay · Enter: back to the cockpit to correct · F5: retry · F6: new variation");
         reportDiagram.Scene=Scene;reportDiagram.Trail=new(Trail);reportDiagram.Final=Car.Pose;reportDiagram.Grade=report.Grade;
         reportDiagram.ShowGoal=true;reportDiagram.Restart();
     }
     void LayoutReport(Vector2 pixels,float unit)
     {
         float scale=unit*Mathf.Min(1,(pixels.X-24)/400);
+        // Phone landscape shows only part of the panel at once: replay first, under the grade.
+        var box=reportDiagram.GetParent();
+        box.MoveChild(reportDiagram,CompactTouch?1:2);
+        reportDiagram.CustomMinimumSize=new(364,CompactTouch?190:250);
+        // Stay above the touch Return/zoom buttons (and below the toolbar in portrait).
+        float top=TouchEnabled&&!CompactUi?88:12,bottom=TouchEnabled?20+56+8:12;
+        float content=((Control)reportScroll.GetChild(0)).GetCombinedMinimumSize().Y+26;
+        float height=Mathf.Min(content,(pixels.Y-top-bottom)/(scale/unit));
+        reportScroll.CustomMinimumSize=new(364,Mathf.Max(60,height-26));
         reportPanel.Scale=Vector2.One*scale;
-        reportPanel.Size=new(400,reportPanel.GetCombinedMinimumSize().Y);
-        reportPanel.Position=new(12*unit,(TouchEnabled?88:12)*unit);
+        reportPanel.Size=new(400,height);
+        reportPanel.Position=new(12*unit,top*unit);
+        if(IsInstanceValid(touchControls)) touchControls.Blocker=reportPanel.Visible?reportPanel.GetGlobalRect():BriefingVisible?briefing.GetGlobalRect():default;
     }
 }

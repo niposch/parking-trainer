@@ -34,7 +34,9 @@ public partial class ParkingGame
     {
         var area=MenuArea(size/unit);
         menu.Scale=Vector2.One*unit;
-        menu.Size=new(Mathf.Min(860,area.Size.X),Mathf.Min(700,area.Size.Y));
+        // Shrink to the page's content (plus header and footer) so short pages leave no empty panel.
+        float content=menu.GetCombinedMinimumSize().Y+(menuPages.TryGetValue(MenuPage,out var page)?page.GetCombinedMinimumSize().Y:0)+4;
+        menu.Size=new(Mathf.Min(860,area.Size.X),Mathf.Min(Mathf.Min(700,area.Size.Y),content));
         menu.Position=(area.Position+(area.Size-menu.Size)/2)*unit;
     }
     void UpdateShortcutPanel()

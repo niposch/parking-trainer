@@ -39,6 +39,7 @@ public partial class ParkingGame : Node3D
             if(arg.StartsWith("--capture=")) {capturePath=arg[10..];autoCapture=true;}
             if(arg.StartsWith("--view=")) captureView=arg[7..];
             if(arg=="--mirror") MirrorBay=true;
+            if(arg=="--touch") forceTouch=true;
             if(arg.StartsWith("--exercise=")) Exercise=(Exercise)int.Parse(arg[11..]);
             if(arg.StartsWith("--drill=")) Drill=(Drill)int.Parse(arg[8..]);
             if(arg.StartsWith("--clutter=")) Clutter=(Clutter)int.Parse(arg[10..]);
@@ -123,6 +124,7 @@ public partial class ParkingGame : Node3D
             Car.Steer=-.4;
             if(captureView=="approach") {Car.Gear=Gear.P;Car.Steer=0;}
             if(captureView=="touch") {SetTouchMode(1);Car.Gear=Gear.P;Car.Steer=0;}
+            if(forceTouch) SetTouchMode(1);
         }
         ApplyPose(); ShowMenuPage(!seenHowTo&&!TouchEnabled&&!smokeMode&&!autoCapture&&!webCheck?"howto":"home"); UpdateViews();
         if(autoCapture)
@@ -188,6 +190,7 @@ public partial class ParkingGame : Node3D
         if(key(Key.Home)||pad(JoyButton.RightStick)) {LookYaw=0;LookPitch=0;}
         if(key(Key.F2)) StartDemo();
     }
+    bool forceTouch;
     void Glance(float yaw,float pitch)
     {
         bool there=Math.Abs(LookYaw-yaw)<.05f && Math.Abs(LookPitch-pitch)<.05f;

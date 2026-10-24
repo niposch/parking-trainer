@@ -9,7 +9,8 @@ public partial class ParkingGame
     Camera3D[] mirrorCameras=new Camera3D[3];
     Camera3D surroundCamera=null!;
     MeshInstance3D guideMesh=null!,fixMesh=null!;
-    Label3D landmark=null!;
+    internal float MirrorDip;
+    MeshInstance3D landmark=null!;
     internal static ShaderMaterial FlipImage()=>new() { Shader=new Shader {Code="shader_type canvas_item; void fragment(){ COLOR=texture(TEXTURE,vec2(1.0-UV.x,UV.y)); }"} };
     SubViewport View(int width,int height,out Camera3D camera,uint layers=35)
     {
@@ -34,8 +35,11 @@ public partial class ParkingGame
         mapCamera.Position=new(1,28,0);mapCamera.RotationDegrees=new(-90,0,0);
         guideMesh=new MeshInstance3D {Layers=4,CastShadow=GeometryInstance3D.ShadowCastingSetting.Off};vehicle.AddChild(guideMesh);
         fixMesh=new MeshInstance3D {Layers=1,CastShadow=GeometryInstance3D.ShadowCastingSetting.Off};AddChild(fixMesh);
-        landmark=new Label3D {Text="◉",FontSize=80,PixelSize=.0035f,Modulate=new("d4ff9e"),Billboard=BaseMaterial3D.BillboardModeEnum.Enabled,
-            NoDepthTest=false,OutlineSize=10,OutlineModulate=new("23332a"),Layers=1};AddChild(landmark);
+        // A drawn marker rather than a symbol glyph, which the browser font may lack.
+        var ring=WorldFactory.Material(new("d4ff9e"),true);
+        landmark=new MeshInstance3D {Mesh=new SphereMesh {Radius=.09f,Height=.18f},MaterialOverride=ring,Layers=1,CastShadow=GeometryInstance3D.ShadowCastingSetting.Off};
+        landmark.AddChild(new MeshInstance3D {Mesh=new SphereMesh {Radius=.13f,Height=.26f},MaterialOverride=new StandardMaterial3D {AlbedoColor=new("23332a"),ShadingMode=BaseMaterial3D.ShadingModeEnum.Unshaded,CullMode=BaseMaterial3D.CullModeEnum.Front},Layers=1,CastShadow=GeometryInstance3D.ShadowCastingSetting.Off});
+        AddChild(landmark);
     }
     void FrameTeachingMap()
     {
@@ -60,15 +64,25 @@ public partial class ParkingGame
         }
         rearCamera.GlobalTransform=vehicle.GlobalTransform*new Transform3D(Basis.FromEuler(new(-.45f,Mathf.Pi,0)),new(.04f,1.10f,.72f));
         // Planar virtual-eye mirrors: reflect the eye about each mirror plane, then
-        // use off-axis frusta. Side mirrors get a modest convex FOV approximation.
+        // use off-axis frusta. Side mirrors are aimed as a driver sets them: the
+        // horizon a little above centre and the car's own flank filling the inner
+        // edge. A mild widening approximates the slightly convex passenger mirror.
+        // Like many modern cars, the passenger mirror dips toward the rear wheel and
+        // kerb while reverse is selected, and returns when it is deselected.
+        MirrorDip=Mathf.MoveToward(MirrorDip,Car.Gear==Gear.R?1:0,(float)delta*2.5f);
         for(int i=0;i<3;i++)
         {
             var centre=mirrorCentres[i];var toEye=(PlayerCabin.EyeTarget(0,EyeHeight)-centre).Normalized();
-            var rearward=new Vector3(i==0?-.26f:i==2?.26f:0,i==1?-.06f:-.03f,1).Normalized();
+            float dip=i==2?MirrorDip:0;
+            var rearward=new Vector3(i==0?-.25f:i==2?.27f-.10f*dip:0,i==1?-.06f:-.10f-.32f*dip,1).Normalized();
             var normal=(toEye+rearward).Normalized();
             if(mirrorScreens[i]!=null) mirrorScreens[i].Basis=Basis.LookingAt(normal,Vector3.Up,true);
             UpdateMirrorMount(i);
             var reflected=eye.Position-2*normal*(eye.Position-centre).Dot(normal);
+            // The glass sits closer to the door than on a real car, which puts the
+            // reflected eye just inside the body side: the flank would then be seen
+            // from within. Keep the virtual eye outboard, as with a real mirror arm.
+            if(i!=1) reflected.X+=Mathf.Sign(centre.X)*.16f;
             var cam=mirrorCameras[i];
             cam.GlobalPosition=vehicle.ToGlobal(reflected);
             var n=vehicle.GlobalBasis*normal;
@@ -79,7 +93,7 @@ public partial class ParkingGame
             // mirror plane so intervening door/roof geometry cannot cover it.
             float height=mirrorSizes[i].Y;
             cam.KeepAspect=Camera3D.KeepAspectEnum.Height;
-            cam.SetFrustum(height*near/distance*(i==1?1:1.7f),new Vector2(local.X,local.Y)*near/distance,near,65);
+            cam.SetFrustum(height*near/distance*(i switch {0=>1.25f,2=>1.45f,_=>1f}),new Vector2(local.X,local.Y)*near/distance,near,65);
         }
         surroundCamera.GlobalTransform=vehicle.GlobalTransform*new Transform3D(Basis.FromEuler(new(-Mathf.Pi/2,0,0)),new(0,10,(float)CarSpec.CentreZ));
         surroundCamera.CullMask=Car.Gear==Gear.R?47u:43u;

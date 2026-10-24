@@ -31,7 +31,8 @@ public partial class ParkingGame
         {
             bool full=DisplayServer.WindowGetMode()!=DisplayServer.WindowMode.Windowed;
             if(touchControls.Fullscreen!=full) {touchControls.Fullscreen=full;touchControls.QueueRedraw();}
-            touchControls.Configure(TouchEnabled,Paused,Inspection,Car.Gear,Car.ParkingBrake);
+            // A briefing card is modal: the driving controls must not draw over it.
+            touchControls.Configure(TouchEnabled,Paused||BriefingVisible,Inspection,Car.Gear,Car.ParkingBrake);
         }
         if(IsInstanceValid(touchSelector)) touchSelector.Select(TouchMode);
     }
